@@ -18,7 +18,7 @@ import {
   EditOutlined, 
   DeleteOutlined 
 } from "@ant-design/icons";
-import NavbarAdmin from "./NavbarAdmin";
+//import NavbarAdmin from "./NavbarAdmin";
 
 const { Content } = Layout;
 const { Title, Text } = Typography;

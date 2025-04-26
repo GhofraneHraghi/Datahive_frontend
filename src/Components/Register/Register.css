@@ -1,0 +1,147 @@
+.register-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background-color: #f8f9fa;
+    position: relative;
+  }
+  
+  .register-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #6e8efb, #a777e3);
+    opacity: 0.1;
+    z-index: -1;
+  }
+  
+  .register-card {
+    width: 100%;
+    max-width: 800px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border: none;
+    overflow: hidden;
+  }
+  
+  .register-header {
+    text-align: center;
+    padding: 2rem 2rem 1rem;
+  }
+  
+  .register-title {
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  
+  .register-subtitle {
+    color: #7f8c8d;
+    font-size: 1rem;
+  }
+  
+  .register-form {
+    padding: 0 2rem 2rem;
+  }
+  
+  .input-icon {
+    color: rgba(0, 0, 0, 0.25);
+  }
+  
+  .custom-phone-input {
+    width: 100%;
+    padding: 8px 11px;
+    border-radius: 6px;
+    border: 1px solid #d9d9d9;
+    transition: all 0.3s;
+    font-size: 16px;
+  }
+  
+  .custom-phone-input:focus {
+    border-color: #40a9ff;
+    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+    outline: none;
+  }
+  
+  .submit-btn {
+    background-color: #1890ff;
+    border: none;
+    height: 42px;
+    font-weight: 500;
+    transition: all 0.3s;
+  }
+  
+  .submit-btn:hover {
+    background-color: #40a9ff;
+    transform: translateY(-1px);
+  }
+  
+  .google-btn {
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #ddd;
+    color: #757575;
+    font-weight: 500;
+    transition: all 0.3s;
+  }
+  
+  .google-btn:hover {
+    color: #4285f4;
+    border-color: #4285f4;
+    transform: translateY(-1px);
+  }
+  
+  .complete-btn {
+    background-color: #52c41a;
+    border: none;
+    height: 42px;
+    font-weight: 500;
+    transition: all 0.3s;
+  }
+  
+  .complete-btn:hover {
+    background-color: #73d13d;
+    transform: translateY(-1px);
+  }
+  
+  .register-footer {
+    text-align: center;
+    padding: 1rem 2rem;
+    border-top: 1px solid #f0f0f0;
+    color: #7f8c8d;
+  }
+  
+  .login-link {
+    color: #1890ff;
+    font-weight: 500;
+    transition: all 0.3s;
+  }
+  
+  .login-link:hover {
+    color: #40a9ff;
+  }
+  
+  /* Responsive design */
+  @media (max-width: 768px) {
+    .register-container {
+      padding: 1rem;
+    }
+    
+    .register-header {
+      padding: 1.5rem 1rem 0.5rem;
+    }
+    
+    .register-form {
+      padding: 0 1rem 1.5rem;
+    }
+    
+    .register-footer {
+      padding: 1rem;
+    }
+  }

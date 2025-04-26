@@ -8,6 +8,7 @@ import Axios from 'axios';
 import i18n from 'i18n-iso-countries';
 import fr from 'i18n-iso-countries/langs/fr.json';
 import { signInWithGoogle } from "../../components/firebase";
+import './Register.css'; // Create this CSS file for custom styles
 
 i18n.registerLocale(fr);
 
@@ -48,12 +49,10 @@ const Register = () => {
       }
     };
 
-    // Set up a listener for form values
     const formValues = form.getFieldsValue();
     form.setFieldsValue(formValues);
     checkFormComplete();
 
-    // Watch for form field changes
     const subscription = form.getFieldsValue(true);
     subscription && checkFormComplete();
 
@@ -65,7 +64,6 @@ const Register = () => {
   const onFinish = async (values) => {
     setLoading(true);
     try {
-      // Log data being sent for debugging
       console.log("Submitting form with data:", {
         email: values.email,
         firstName: values.firstName,
@@ -87,7 +85,7 @@ const Register = () => {
       });
 
       if (response.status === 201) {
-        antMessage.success('Inscription réussie ! Un email a été envoyé pour définir votre mot de passe.');
+        antMessage.success('Registration successful! An email has been sent to set your password.');
         form.resetFields();
         setPhone('');
         setGoogleSignIn(false);
@@ -96,12 +94,12 @@ const Register = () => {
       console.error("Registration error:", error);
       if (error.response) {
         console.error("Error response:", error.response.data);
-        antMessage.error(error.response.data.message || "Erreur d'inscription, veuillez réessayer.");
+        antMessage.error(error.response.data.message || "Registration error, please try again.");
       } else if (error.request) {
         console.error("Error request:", error.request);
-        antMessage.error("Problème de connexion au serveur. Aucune réponse reçue.");
+        antMessage.error("Server connection problem. No response received.");
       } else {
-        antMessage.error("Problème de connexion au serveur.");
+        antMessage.error("Server connection problem.");
       }
     } finally {
       setLoading(false);
@@ -109,25 +107,19 @@ const Register = () => {
   };
 
   const validateAndSubmitForm = () => {
-    // Validate all fields
     form.validateFields().then(values => {
-      // Check if phone is set
       if (!phone) {
-        antMessage.error("Veuillez entrer un numéro de téléphone");
+        antMessage.error("Please enter a phone number");
         return;
       }
-      
-      // All fields are valid, submit the form
       form.submit();
     }).catch(errorInfo => {
       console.log('Validation failed:', errorInfo);
-      
-      // Provide specific error messages
       const errorFields = errorInfo.errorFields.map(field => field.name[0]);
       if (errorFields.length > 0) {
-        antMessage.error(`Veuillez remplir les champs suivants: ${errorFields.join(', ')}`);
+        antMessage.error(`Please fill the following fields: ${errorFields.join(', ')}`);
       } else {
-        antMessage.error("Veuillez remplir tous les champs obligatoires");
+        antMessage.error("Please fill all required fields");
       }
     });
   };
@@ -136,15 +128,11 @@ const Register = () => {
     try {
       const user = await signInWithGoogle();
       if (user) {
-        // Extract name parts
         const [firstName, ...lastNameParts] = user.displayName.split(" ");
         const lastName = lastNameParts.join(" ");
-        
-        // Get user phone from providerData if available
         const phoneNumber = user.phoneNumber || '';
         
-        // Try to parse country from user locale if available
-        let userCountry = 'TN'; // Default
+        let userCountry = 'TN';
         if (user.locale) {
           const locale = user.locale.split('_')[1] || user.locale.split('-')[1];
           if (locale && locale.length === 2) {
@@ -152,7 +140,6 @@ const Register = () => {
           }
         }
         
-        // Set available fields
         form.setFieldsValue({
           email: user.email,
           firstName: firstName || "",
@@ -160,80 +147,101 @@ const Register = () => {
           country: userCountry,
         });
         
-        // Set phone if available
         if (phoneNumber) {
           setPhone(phoneNumber);
         }
         
-        // Update country state for phone input
         setCountry(userCountry);
         setGoogleSignIn(true);
-        
-        // IMPORTANT: Alert user about missing fields
-        antMessage.info(`Veuillez compléter les champs obligatoires: Nom d'entreprise et Nombre d'employés.`);
+        antMessage.info(`Please complete the required fields: Company Name and Number of employees.`);
       } else {
-        antMessage.error("Échec de l'authentification avec Google.");
+        antMessage.error("Google authentication failed.");
       }
     } catch (error) {
-      console.error("Erreur Google Auth:", error);
-      antMessage.error("Une erreur s'est produite lors de l'authentification Google.");
+      console.error("Google Auth error:", error);
+      antMessage.error("An error occurred during Google authentication.");
     }
   };
 
   return (
-    <div className="registerPage">
-      <Card className="registerCard">
-        <Title level={2} className="registerTitle">Let Us Know You!</Title>
-        <Form form={form} onFinish={onFinish} layout="vertical">
+    <div className="register-container">
+      <div className="register-background"></div>
+      
+      <Card className="register-card">
+        <div className="register-header">
+          <Title level={2} className="register-title">Create Your Account</Title>
+          <Text className="register-subtitle">Join our community today</Text>
+        </div>
+
+        <Form form={form} onFinish={onFinish} layout="vertical" className="register-form">
           {/* Email */}
           <Form.Item
             name="email"
             label="Email"
-            rules={[{ required: true, type: 'email', message: 'Veuillez entrer un email valide!' }]}
+            rules={[{ required: true, type: 'email', message: 'Please enter a valid email!' }]}
           >
-            <Input prefix={<MailOutlined />} placeholder="Enter email" />
+            <Input 
+              prefix={<MailOutlined className="input-icon" />} 
+              placeholder="Enter your email" 
+              size="large"
+            />
           </Form.Item>
 
-          {/* First Name et Last Name sur la même ligne */}
+          {/* First Name and Last Name */}
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
                 name="firstName"
                 label="First Name"
-                rules={[{ required: true, message: 'Veuillez entrer votre prénom!' }]}
+                rules={[{ required: true, message: 'Please enter your first name!' }]}
               >
-                <Input prefix={<UserOutlined />} placeholder="Enter First Name" />
+                <Input 
+                  prefix={<UserOutlined className="input-icon" />} 
+                  placeholder="First name" 
+                  size="large"
+                />
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item
                 name="lastName"
                 label="Last Name"
-                rules={[{ required: true, message: 'Veuillez entrer votre nom de famille!' }]}
+                rules={[{ required: true, message: 'Please enter your last name!' }]}
               >
-                <Input prefix={<UserOutlined />} placeholder="Enter Last Name" />
+                <Input 
+                  prefix={<UserOutlined className="input-icon" />} 
+                  placeholder="Last name" 
+                  size="large"
+                />
               </Form.Item>
             </Col>
           </Row>
 
-          {/* Company Name et Role sur la même ligne */}
+          {/* Company Name and Employees */}
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
                 name="companyName"
                 label="Company Name"
-                rules={[{ required: true, message: 'Veuillez entrer le nom de votre entreprise!' }]}
+                rules={[{ required: true, message: 'Please enter your company name!' }]}
               >
-                <Input prefix={<IdcardOutlined />} placeholder="Enter Company Name" />
+                <Input 
+                  prefix={<IdcardOutlined className="input-icon" />} 
+                  placeholder="Company name" 
+                  size="large"
+                />
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item
                 name="numberOfEmployees"
                 label="Number of employees"
-                rules={[{ required: true, message: 'Veuillez sélectionner le nombre d\'employés!' }]}
+                rules={[{ required: true, message: 'Please select number of employees!' }]}
               >
-                <Select placeholder="Select number of employees">
+                <Select 
+                  placeholder="Select an option" 
+                  size="large"
+                >
                   <Option value="0-10">0-10</Option>
                   <Option value="10-100">10-100</Option>
                   <Option value="+100">+100</Option>
@@ -242,20 +250,21 @@ const Register = () => {
             </Col>
           </Row>
 
-          {/* Sélection du pays */}
+          {/* Country */}
           <Form.Item
             name="country"
             label="Country"
-            rules={[{ required: true, message: 'Veuillez sélectionner votre pays!' }]}
+            rules={[{ required: true, message: 'Please select your country!' }]}
           >
             <Select
               showSearch
-              placeholder="Select a country"
+              placeholder="Select your country"
               optionFilterProp="children"
               onChange={(value) => setCountry(value)}
               filterOption={(input, option) =>
                 option.children.toLowerCase().includes(input.toLowerCase())
               }
+              size="large"
             >
               {Object.entries(i18n.getNames('fr')).map(([code, name]) => (
                 <Option key={code} value={code}>
@@ -265,10 +274,10 @@ const Register = () => {
             </Select>
           </Form.Item>
 
-          {/* Numéro de téléphone avec drapeau */}
+          {/* Phone Number */}
           <Form.Item
             label="Phone Number"
-            rules={[{ required: true, message: 'Veuillez entrer votre numéro de téléphone!' }]}
+            rules={[{ required: true, message: 'Please enter your phone number!' }]}
           >
             <PhoneInput
               international
@@ -276,12 +285,20 @@ const Register = () => {
               value={phone}
               onChange={setPhone}
               placeholder="Enter phone number"
+              className="custom-phone-input"
             />
           </Form.Item>
 
           {/* Submit Button */}
           <Form.Item>
-            <Button type="primary" htmlType="submit" loading={loading} block>
+            <Button 
+              type="primary" 
+              htmlType="submit" 
+              loading={loading} 
+              block
+              size="large"
+              className="submit-btn"
+            >
               Register
             </Button>
           </Form.Item>
@@ -289,18 +306,19 @@ const Register = () => {
           {/* Google Sign-In Button */}
           <Form.Item>
             <Button 
-              type="primary" 
+              type="default"
               icon={<GoogleOutlined />}
               onClick={handleGoogleSignIn}
               loading={loading}
               block
-              style={{ backgroundColor: '#4285F4', borderColor: '#4285F4' }}
+              size="large"
+              className="google-btn"
             >
               Register with Google
             </Button>
           </Form.Item>
 
-          {/* Completion Button (appears after Google Sign-in) */}
+          {/* Completion Button */}
           {googleSignIn && (
             <Form.Item>
               <Button 
@@ -309,21 +327,18 @@ const Register = () => {
                 loading={loading}
                 disabled={!formComplete}
                 block
-                style={{ 
-                  backgroundColor: '#34A853', 
-                  borderColor: '#34A853', 
-                  marginTop: '10px',
-                  opacity: formComplete ? 1 : 0.5
-                }}
+                size="large"
+                className="complete-btn"
               >
                 Complete Registration
               </Button>
             </Form.Item>
           )}
         </Form>
-        <Text>
-          Have an account? <Link to="/login">Login</Link>
-        </Text>
+
+        <div className="register-footer">
+          <Text>Already have an account? <Link to="/login" className="login-link">Login</Link></Text>
+        </div>
       </Card>
     </div>
   );

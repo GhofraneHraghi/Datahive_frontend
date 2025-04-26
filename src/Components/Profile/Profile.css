@@ -1,0 +1,134 @@
+/* Profile.css - Style moderne inspiré du Dashboard */
+
+/* Layout principal */
+.profile-container {
+    background-color: #f8f9fa;
+    min-height: 100vh;
+  }
+  
+  /* En-tête */
+  .profile-header {
+    background: #fff;
+    padding: 20px 24px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .profile-title {
+    color: #2c3e50;
+    margin: 0 !important;
+    font-weight: 600;
+  }
+  
+  /* Cartes modernes */
+  .profile-card {
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    margin-bottom: 24px;
+    border: none;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .profile-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  }
+  
+  .profile-card .ant-card-head {
+    border-bottom: 1px solid #f0f0f0;
+  }
+  
+  .profile-card .ant-card-head-title {
+    font-weight: 500;
+    color: #34495e;
+  }
+  
+  /* Formulaires */
+  .profile-form .ant-form-item-label label {
+    color: #7f8c8d;
+    font-weight: 500;
+  }
+  
+  .profile-form .ant-input,
+  .profile-form .ant-select-selector {
+    border-radius: 8px !important;
+    border: 1px solid #e0e0e0 !important;
+    padding: 8px 12px !important;
+  }
+  
+  /* Boutons */
+  .profile-btn-edit {
+    background-color: #3498db;
+    border-color: #3498db;
+    border-radius: 8px;
+    font-weight: 500;
+  }
+  
+  .profile-btn-save {
+    background-color: #2ecc71;
+    border-color: #2ecc71;
+    border-radius: 8px;
+    font-weight: 500;
+  }
+  
+  .profile-btn-cancel {
+    border-radius: 8px;
+  }
+  
+  /* Section mot de passe */
+  .password-section {
+    background: linear-gradient(135deg, #f6f9fc 0%, #eef2f5 100%);
+    border-radius: 12px;
+  }
+  
+  /* Section abonnement */
+  .subscription-badge-active {
+    background-color: #27ae60;
+  }
+  
+  .subscription-badge-inactive {
+    background-color: #e74c3c;
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .profile-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    
+    .profile-card {
+      margin-bottom: 16px;
+    }
+  }
+  /* Animation des icônes */
+.profile-card .anticon {
+    transition: transform 0.3s ease;
+  }
+  
+  .profile-card:hover .anticon {
+    transform: scale(1.1);
+  }
+  
+  /* Effet de survol pour les boutons */
+  .ant-btn:not(.ant-btn-danger):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Input focus moderne */
+  .profile-form .ant-input:focus, 
+  .profile-form .ant-select-focused .ant-select-selector {
+    border-color: #3498db !important;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2) !important;
+  }
+  
+  /* Transition pour les onglets */
+  .ant-tabs-ink-bar {
+    transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+  }

@@ -1,0 +1,84 @@
+/* Style général pour la page */
+.manage-member-container {
+  padding: 24px;
+  background: #fff;
+  min-height: 360px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+/* Titre principal */
+.manage-member-title {
+  display: flex;
+  align-items: center;
+  font-size: 24px;
+  font-weight: bold;
+  color: #1890ff;
+  margin-bottom: 16px;
+}
+
+.manage-member-title svg {
+  margin-right: 8px;
+}
+
+/* Style des cartes */
+.manage-member-card {
+  margin-bottom: 24px;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  transition: box-shadow 0.3s ease;
+}
+
+.manage-member-card:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Bouton Ajouter un membre */
+.add-member-button {
+  background-color: #1890ff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.add-member-button:hover {
+  background-color: #40a9ff;
+}
+
+/* Table des membres */
+.ant-table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ant-table-thead > tr > th {
+  background-color: #fafafa;
+  font-weight: bold;
+  text-align: center;
+}
+
+.ant-table-tbody > tr > td {
+  text-align: center;
+}
+
+.ant-table-tbody > tr:hover {
+  background-color: #f5f5f5;
+  transition: background-color 0.3s ease;
+}
+
+/* Modal */
+.ant-modal-header {
+  background-color: #1890ff;
+  color: #fff;
+  border-radius: 8px 8px 0 0;
+}
+
+.ant-modal-title {
+  color: #fff;
+}
+
+.ant-modal-footer {
+  border-top: none;
+}

@@ -1,331 +1,562 @@
-import { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import {
+  Layout, Typography, Card, Steps, Button, Input, Upload, Form, Row, Col,
+  message, Divider, Badge, Space, Progress, Avatar, Alert, Modal, Drawer
+} from 'antd';
+import {
+  CopyOutlined, UploadOutlined, CloudOutlined, PlayCircleOutlined,
+  ApiOutlined, CheckCircleOutlined, SyncOutlined,
+  InfoCircleOutlined, ExclamationCircleOutlined, RocketOutlined,
+  ThunderboltOutlined, SettingOutlined, CloseOutlined
+} from '@ant-design/icons';
+import { motion } from 'framer-motion';
 import axios from 'axios';
-import { Layout, Typography, Card, Button, Modal, Input, Spin, Table, notification, Space } from 'antd';
-import { UserAddOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
-import NavbarUser from "../NavbarUser";
+import { Link, useNavigate } from 'react-router-dom';
+import Guide from './Guide';
+import Navbar from './Navbar';
+import './Dashboard.css';
 
-const { Content } = Layout;
-const { Title } = Typography;
+const { Header, Content, Footer, Sider } = Layout;
+const { Step } = Steps;
+const { Title, Text, Paragraph } = Typography;
 
 const Dashboard = () => {
-  const [userData, setUserData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [additionalUsers, setAdditionalUsers] = useState([]);
-  const [newUserEmail, setNewUserEmail] = useState('');
-  const [modalVisible, setModalVisible] = useState(false);
-  const [selectedSubscriptionId, setSelectedSubscriptionId] = useState(null);
-  const [siderCollapsed, setSiderCollapsed] = useState(false);
-  const [additionalUsersLoading, setAdditionalUsersLoading] = useState(true);
-
+  const [currentStep, setCurrentStep] = useState(0);
+  const [bucketURI, setBucketURI] = useState('');
+  const [keyFile, setKeyFile] = useState(null);
+  const [tenantName, setTenantName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [syncStatus, setSyncStatus] = useState('idle');
+  const [userId, setUserId] = useState(null);
+  const [hasActivePlan, setHasActivePlan] = useState(false);
+  const [isHelpVisible, setIsHelpVisible] = useState(false);
+  const [guideVisible, setGuideVisible] = useState(false);
+  const [syncProgress, setSyncProgress] = useState(0);
+  const [hasNotifications, setHasNotifications] = useState(false);
+  const [messageApi, contextHolder] = message.useMessage();
+  const [form] = Form.useForm();
   const navigate = useNavigate();
- // Vérifier si l'utilisateur a un abonnement actif
- const hasActiveSubscription = userData?.subscriptions?.some(sub => sub.status === 'active');
-  // Gestion du collapse de la barre latérale
-  const handleSiderCollapse = (collapsed) => {
-    setSiderCollapsed(collapsed);
-  };
+  
+  // Variables pour la navbar
+  const [navbarCollapsed, setNavbarCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [currentPage, setCurrentPage] = useState('accueil');
 
-  // 1. Fonction pour récupérer les données de l'utilisateur
-  const fetchUserData = async () => {
-    const token = localStorage.getItem('authToken');
-    console.log('Token:', token); // Ajoutez cette ligne pour vérifier le token
-    if (!token) {
-      notification.error({ message: 'Token non trouvé.' });
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const response = await axios.get('http://localhost:3001/api/user-data', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setUserData(response.data.user);
-      setLoading(false);
-    } catch (error) {
-      notification.error({ message: 'Erreur de récupération des données utilisateur.' });
-      setLoading(false);
-    }
-  };
-
-  // 2. Fonction pour récupérer les utilisateurs supplémentaires
-  const fetchAdditionalUsers = async () => {
-    const token = localStorage.getItem('authToken');
-    if (!token) return;
-
-    try {
-      setAdditionalUsersLoading(true);
-      const response = await axios.get('http://localhost:3001/api/additional-users', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      
-      setAdditionalUsers(response.data.additionalUsers);
-      setAdditionalUsersLoading(false);
-    } catch (error) {
-      console.error('Erreur lors de la récupération des utilisateurs supplémentaires:', error);
-      notification.error({ message: 'Erreur lors de la récupération des utilisateurs supplémentaires.' });
-      setAdditionalUsersLoading(false);
-    }
-  };
-
-  // 3. useEffect pour charger les données au chargement du composant
   useEffect(() => {
-    fetchUserData();
-    fetchAdditionalUsers();
-  }, []);
-
-  const handleAddUser = async () => {
-    if (!selectedSubscriptionId) {
-      notification.warning({ message: "Veuillez sélectionner un abonnement." });
+    // Vérifier si l'utilisateur est connecté
+    const user = JSON.parse(localStorage.getItem('user'));
+    const token = localStorage.getItem('authToken');
+    
+    if (!token || !user) {
+      navigate('/login');
       return;
     }
-
-    const selectedSubscription = userData.subscriptions.find(sub => sub.id === selectedSubscriptionId);
-    const maxAdditionalUsers = selectedSubscription.type === 'premium' ? 5 : 2;
-    const currentAdditionalUsers = additionalUsers.filter(user => user.subscriptionId === selectedSubscriptionId).length;
-
-    if (currentAdditionalUsers >= maxAdditionalUsers) {
-      notification.warning({ message: `Limite atteinte (${maxAdditionalUsers} utilisateurs).` });
-      return;
+    
+    setUserId(user.id);
+    
+    // Vérifier l'abonnement à partir des données stockées
+    if (user.has_active_subscription) {
+      setHasActivePlan(true);
+    } else {
+      // En cas de doute, vérifier à nouveau auprès du serveur
+      checkSubscription();
     }
+    
+    setHasNotifications(Math.random() > 0.5);
+    
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [navigate]);
 
-    if (!newUserEmail) {
-      notification.warning({ message: "Veuillez entrer un email valide." });
+  const checkSubscription = async () => {
+    const token = localStorage.getItem('authToken');
+    const user = JSON.parse(localStorage.getItem('user'));
+    
+    if (!token || !user) {
+      navigate('/login');
       return;
     }
 
     try {
-      const response = await axios.post(
-        'http://localhost:3001/api/add-additional-user',
-        {
-          parentUserId: userData.id,
-          email: newUserEmail,
-          subscriptionId: selectedSubscriptionId,
+      const res = await axios.get(`http://localhost:3001/user-subscription/${user.id}`, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` },
-        }
-      );
-      notification.success({ message: response.data.message });
+      });
       
-      // Actualiser la liste des utilisateurs supplémentaires après l'ajout
-      fetchAdditionalUsers();
+      const isActive = res.data?.subscription?.status === 'active';
       
-      setNewUserEmail('');
-      setModalVisible(false);
+      // Mettre à jour l'état local et le localStorage
+      setHasActivePlan(isActive);
+      
+      // Mettre à jour le localStorage avec l'information d'abonnement
+      const updatedUser = {
+        ...user,
+        subscription_id: res.data?.subscription?.id || null,
+        has_active_subscription: isActive
+      };
+      
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      
     } catch (error) {
-      notification.error({ message: 'Une erreur s\'est produite lors de l\'ajout de l\'utilisateur.' });
+      console.error('Subscription check error:', error);
+      setHasActivePlan(false);
     }
   };
 
-  // Fonction pour rediriger vers la page des plans d'abonnement (activation)
-  const handleActivatePlan = () => {
-    navigate('/subscription-plans');
+  const handleCopy = () => {
+    navigator.clipboard.writeText('test-google-play-console@pc-api-4722596725443039036-6');
+    messageApi.success('Email copié !', 2);
   };
 
-  // Fonction pour rediriger vers la page des plans d'abonnement (changement)
-  const handleChangeSubscription = () => {
-    const currentSubscriptionType = userData.subscriptions.find(sub => sub.status === 'active')?.type;
-    navigate("/subscription-plans", { state: { isChangingSubscription: true, currentSubscriptionType } });
-  };
+  const handleSubmit = async () => {
+    try {
+      if (!bucketURI || !keyFile || !tenantName) {
+        throw new Error('Veuillez remplir tous les champs obligatoires');
+      }
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <Spin size="large" />
-      </div>
-    );
-  }
+      console.log('bucketURI:', bucketURI);
+      console.log('sourceName:', tenantName);
+      console.log('keyFile:', keyFile);
+      console.log('userId:', userId); // Add this for debugging
 
-  // Colonnes pour le tableau des utilisateurs supplémentaires
-  const additionalUsersColumns = [
-    {
-      title: 'Email',
-      dataIndex: 'email',
-      key: 'email',
-    },
-    {
-      title: 'Statut d\'abonnement',
-      dataIndex: 'subscriptionStatus',
-      key: 'subscriptionStatus',
-    },
-    {
-      title: 'Type d\'abonnement',
-      dataIndex: 'subscriptionType',
-      key: 'subscriptionType',
-    },
-    {
-      title: 'Role',
-      dataIndex: 'role',  // Ajoutez cette ligne pour afficher le rôle
-      key: 'role',
-    },
-    {
-      title: 'Date de début',
-      dataIndex: 'startDate',
-      key: 'startDate',
-      render: (text) => new Date(text).toLocaleDateString('fr-FR')
-    },
-    {
-      title: 'Date de fin',
-      dataIndex: 'endDate',
-      key: 'endDate',
-      render: (text) => new Date(text).toLocaleDateString('fr-FR')
+      setLoading(true);
+
+      const formData = new FormData();
+      formData.append('bucketURI', bucketURI);
+      formData.append('sourceName', tenantName);
+      formData.append('keyFile', keyFile);
+      formData.append('userId', userId); // Add this line to include userId
+
+      const response = await fetch('http://localhost:3001/process-bucket', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Erreur serveur :', errorData);
+        throw new Error(errorData.message || 'Erreur de traitement');
+      }
+
+      const data = await response.json();
+      messageApi.success(`Configuration réussie pour ${tenantName}`);
+
+      // Réinitialisation après succès
+      form.resetFields();
+      setKeyFile(null);
+      setCurrentStep(0);
+
+    } catch (error) {
+      messageApi.error(error.message);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  // Colonnes pour le tableau des abonnements
-  const subscriptionColumns = [
+  const handleNavbarCollapse = (collapsed) => {
+    setNavbarCollapsed(collapsed);
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  // Bouton pour ouvrir/fermer le guide (sidebar)
+  const handleToggleGuide = () => {
+    setGuideVisible((prev) => !prev);
+  };
+
+  const steps = [
     {
-      title: 'Nom',
-      dataIndex: 'name',
-      key: 'name',
-    },
-    {
-      title: 'Email',
-      dataIndex: 'email',
-      key: 'email',
-    },
-    {
-      title: 'Type d\'abonnement',
-      dataIndex: 'type',
-      key: 'type',
-    },
-    {
-      title: 'Statut',
-      dataIndex: 'status',
-      key: 'status',
-    },
-    {
-      title: 'Role',
-    dataIndex: 'role',  // Mettez à jour cette ligne pour afficher le rôle
-    key: 'role',
-  },
-    {
-      title: 'Date de début',
-      dataIndex: 'startDate',
-      key: 'startDate',
-    },
-    {
-      title: 'Date de fin',
-      dataIndex: 'endDate',
-      key: 'endDate',
-    },
-    {
-      title: 'Action',
-      key: 'action',
-      render: (_, record) => (
-        <Space size="middle" direction="vertical">
-          {record.status === 'active' && (
-            <>
-              {record.type !== 'basic' && (
-                <Button
-                  type="primary"
-                  icon={<UserAddOutlined />}
-                  onClick={() => {
-                    setSelectedSubscriptionId(record.key);
-                    setModalVisible(true);
-                  }}
-                >
-                  Ajouter un utilisateur
-                </Button>
-              )}
-              <Button
+      title: 'Invitation',
+      icon: <ApiOutlined />,
+      content: (
+        <Card title="Étape 1: Inviter le compte" className="step-card">
+          <Paragraph>
+            Accordez laccès à votre Google Play Console en invitant notre compte de service.
+          </Paragraph>
+          <Card type="inner" className="instruction-card">
+            <ol className="feature-list">
+              <li>Connectez-vous à votre Google Play Console</li>
+              <li>Accédez à Utilisateurs et permissions</li>
+              <li>Invitez un nouvel utilisateur avec accès admin</li>
+              <li>Utilisez lemail ci-dessous</li>
+            </ol>
+          </Card>
+          <Form.Item label="Email d'invitation">
+            <Input.Group compact>
+              <Input
+                value="test-google-play-console@pc-api-4722596725443039036-6"
+                readOnly
+                className="readonly-input"
+              />
+              <Button 
                 type="primary"
-                onClick={handleChangeSubscription}
+                icon={<CopyOutlined />}
+                onClick={handleCopy}
+                className="copy-button"
               >
-                Changer votre Abonnement
+                Copier
               </Button>
-            </>
+            </Input.Group>
+          </Form.Item>
+        </Card>
+      ),
+    },
+    {
+      title: 'Configuration GCS',
+      icon: <CloudOutlined />,
+      content: (
+        <Card title="Étape 2: Configurer Google Cloud Storage" className="step-card">
+          <Paragraph>
+            Connectez votre bucket Google Cloud Storage pour recevoir les données synchronisées.
+          </Paragraph>
+          <Form layout="vertical">
+            <Form.Item
+              label="URI GCS"
+              name="bucketURI"
+              rules={[{ required: true, message: "L'URI du bucket est requise" }]}
+            >
+              <Input
+                placeholder="gs://nom-de-votre-bucket"
+                value={bucketURI}
+                onChange={(e) => setBucketURI(e.target.value)}
+                prefix={<CloudOutlined />}
+                disabled={!hasActivePlan}
+              />
+            </Form.Item>
+            <Form.Item
+              label="Fichier de clé de compte de service"
+              name="keyFile"
+              rules={[{ required: true, message: 'Le fichier de clé est requis' }]}
+            >
+              <Upload
+                accept=".json"
+                fileList={keyFile ? [keyFile] : []} // Utilisez fileList
+                beforeUpload={(file) => {
+                  setKeyFile(file);
+                  return false;
+                }}
+                onRemove={() => setKeyFile(null)} // Permet de supprimer le fichier
+                maxCount={1}
+                disabled={!hasActivePlan}
+              >
+                <Button icon={<UploadOutlined />} disabled={!hasActivePlan}>
+                  {keyFile ? keyFile.name : 'Sélectionner le fichier JSON'}
+                </Button>
+              </Upload>
+            </Form.Item>
+          </Form>
+        </Card>
+      ),
+    },
+    {
+      title: 'Nommer la source',
+      icon: <PlayCircleOutlined />,
+      content: (
+        <Card title="Étape 3: Nommez votre source de données" className="step-card">
+          <Paragraph>
+            Identifiez cette source de données avec un nom significatif pour vos rapports.
+          </Paragraph>
+          <Form layout="vertical">
+            <Form.Item
+              label="Nom de la source"
+              name="tenantName"
+              rules={[{ required: true, message: 'Le nom de la source est requis' }]}
+            >
+              <Input
+                placeholder="ex. MonApp-Production"
+                value={tenantName}
+                onChange={(e) => setTenantName(e.target.value)}
+                disabled={!hasActivePlan}
+              />
+            </Form.Item>
+          </Form>
+
+          {syncStatus === 'syncing' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <Card className="progress-card">
+                <Space direction="vertical" size="middle">
+                  <Progress 
+                    percent={syncProgress}
+                    status="active"
+                    strokeColor={{ from: '#1890ff', to: '#096dd9' }}
+                  />
+                  <Text>Synchronisation de vos données...</Text>
+                </Space>
+              </Card>
+            </motion.div>
           )}
-          {record.status !== 'active' && (
-            <Button type="primary" onClick={handleActivatePlan}>
-              Activer votre plan
-            </Button>
+
+          {syncStatus === 'completed' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <Card className="success-card">
+                <Space direction="vertical" size="middle">
+                  <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 24 }} />
+                  <Text strong>Configuration terminée avec succès !</Text>
+                </Space>
+              </Card>
+            </motion.div>
           )}
-        </Space>
+
+          <Button
+            type="primary"
+            onClick={handleSubmit}
+            loading={loading}
+            block
+            size="large"
+            icon={<ThunderboltOutlined />}
+            className="submit-button"
+            disabled={!hasActivePlan}
+          >
+            Terminer la configuration
+          </Button>
+        </Card>
       ),
     },
   ];
 
-  // Données pour le tableau des abonnements
-  const subscriptionData = userData?.subscriptions?.map(subscription => ({
-    key: subscription.id,
-    name: userData.name,
-    email: userData.email,
-    type: subscription.type,
-    status: subscription.status,
-    role: userData.role,  // Ajoutez cette ligne pour inclure le rôle
-    startDate: subscription.startDate || 'Aucun',
-    endDate: subscription.endDate || 'Aucun',
-  })) || [];
+  useEffect(() => {
+    const audio = document.getElementById('myAudio');
+    if (audio && audio.paused) {
+      audio.play();
+    }
+  }, []);
 
   return (
-    <Layout style={{ minHeight: "100vh" }}>
-      <NavbarUser onCollapse={handleSiderCollapse} />
+    <Layout className="dashboard-layout">
+      {contextHolder}
 
-      <Layout style={{ 
-        marginLeft: window.innerWidth < 768 ? 0 : (siderCollapsed ? 80 : 200), 
-        transition: "margin-left 0.3s",
-        background: "#f0f2f5" 
-      }}>
-        <Content style={{ 
-          margin: window.innerWidth < 768 ? "64px 16px 0" : "24px 16px 0", 
-          overflow: "initial" 
-        }}>
-          <div style={{ padding: 24, background: "#fff", minHeight: 360 }}>
-            <Title level={3}>Bienvenue, {userData?.name || "Utilisateur"}</Title>
-            
-            {/* Tableau des utilisateurs supplémentaires - Placé AVANT le tableau des abonnements */}
-            {hasActiveSubscription && (
-            <Card 
-              title="Utilisateurs supplémentaires" 
-              style={{ marginBottom: 24 }}
-              extra={
-                additionalUsersLoading ? (
-                  <Spin size="small" />
-                ) : (
-                  <Button onClick={fetchAdditionalUsers} type="link">
-                    Actualiser
-                  </Button>
-                )
-              }
+      {/* Navbar importée */}
+      <Navbar 
+        onCollapse={handleNavbarCollapse} 
+        onPageChange={handlePageChange}
+      />
+
+      <Layout
+        style={{
+          marginLeft: isMobile ? 0 : (navbarCollapsed ? 80 : 250),
+          marginRight: guideVisible ? 300 : 0,
+          transition: 'margin-left 0.2s, margin-right 0.2s'
+        }}
+      >
+        <Content className="dashboard-content">
+          {/* Bouton pour ouvrir le guide (desktop) */}
+          {!isMobile && !guideVisible && (
+            <Button
+              type="primary"
+              icon={<InfoCircleOutlined />}
+              onClick={handleToggleGuide}
+              style={{
+                marginBottom: 24,
+                float: 'right',
+                zIndex: 1100
+              }}
             >
-              <Table
-                loading={additionalUsersLoading}
-                columns={additionalUsersColumns}
-                dataSource={additionalUsers.map((user, index) => ({ ...user, key: index }))}
-                pagination={false}
-                locale={{ emptyText: "Aucun utilisateur supplémentaire trouvé" }}
-              />
-            </Card>
+              Ouvrir le guide
+            </Button>
           )}
-            {/* Tableau des abonnements */}
-            <Card title="Mes abonnements" style={{ marginBottom: 24 }}>
-              <Table
-                columns={subscriptionColumns}
-                dataSource={subscriptionData}
-                pagination={false}
-              />
-            </Card>
-
-            {/* Modal pour ajouter un utilisateur supplémentaire */}
-            <Modal
-              title="Ajouter un utilisateur supplémentaire"
-              open={modalVisible}
-              onCancel={() => setModalVisible(false)}
-              onOk={handleAddUser}
-              okText="Ajouter"
-              cancelText="Annuler"
+          {/* Bouton pour fermer le guide (desktop) */}
+          {!isMobile && guideVisible && (
+            <Button
+              type="primary"
+              icon={<CloseOutlined />}
+              onClick={handleToggleGuide}
+              style={{
+                marginBottom: 24,
+                float: 'right',
+                zIndex: 1100
+              }}
             >
-              <Input
-                placeholder="Email de l'utilisateur"
-                value={newUserEmail}
-                onChange={(e) => setNewUserEmail(e.target.value)}
-              />
-            </Modal>
+              Fermer le guide
+            </Button>
+          )}
+
+          <div
+            className="content-container"
+            style={{
+              transition: 'margin 0.2s'
+            }}
+          >
+            <motion.div 
+              className="welcome-card"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <Card bordered={false}>
+                <Row align="middle" gutter={[24, 24]}>
+                  <Col span={24}>
+                    <Title level={3}>Synchronisation Google Play</Title>
+                    <Paragraph type="secondary">
+                      Connectez votre Google Play Console pour synchroniser automatiquement 
+                      les données analytiques et de vente vers votre Google Cloud Storage.
+                    </Paragraph>
+                  </Col>
+                </Row>
+              </Card>
+            </motion.div>
+
+            {!hasActivePlan && (
+              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
+                <Alert
+                  message="Abonnement Requis"
+                  description={
+                    <Space direction="vertical">
+                      <Text>Vous avez besoin dun abonnement actif pour utiliser ce service.</Text>
+                      <Button 
+                        type="primary" 
+                        href="/subscription-plans"
+                        icon={<RocketOutlined />}
+                        className="upgrade-button"
+                      >
+                        Mettre à niveau
+                      </Button>
+                    </Space>
+                  }
+                  type="warning"
+                  showIcon
+                  closable
+                />
+              </motion.div>
+            )}
+
+            <div className="steps-container">
+              <Steps current={currentStep} onChange={setCurrentStep} className="progress-steps">
+                {steps.map(item => (
+                  <Step key={item.title} title={item.title} icon={item.icon} />
+                ))}
+              </Steps>
+
+              <div className="step-content">
+                {steps[currentStep].content}
+              </div>
+
+              <div className="step-navigation">
+                {currentStep > 0 && (
+                  <Button onClick={() => setCurrentStep(currentStep - 1)} className="nav-button prev-button">
+                    Précédent
+                  </Button>
+                )}
+                {currentStep < steps.length - 1 && (
+                  <Button 
+                    type="primary"
+                    onClick={() => setCurrentStep(currentStep + 1)}
+                    disabled={(currentStep === 1 && (!bucketURI || !keyFile)) || !hasActivePlan}
+                    className="nav-button next-button"
+                  >
+                    Suivant
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
         </Content>
+
+        <Footer className="dashboard-footer">
+          <Text type="secondary">
+            Synchronisation Google Play © {new Date().getFullYear()} - BigDeal Analytics
+          </Text>
+        </Footer>
       </Layout>
+      
+      {/* Guide sidebar : n'affiche que si guideVisible */}
+      {guideVisible && (
+        <Sider
+          width={300}
+          theme="light"
+          className="guide-sider"
+          style={{ 
+            position: 'fixed', 
+            right: 0, 
+            top: 0, 
+            height: '100vh',
+            zIndex: 1000,
+            boxShadow: '-2px 0 8px rgba(0, 0, 0, 0.15)'
+          }}
+          trigger={null}
+        >
+          <Guide onClose={handleToggleGuide} />
+        </Sider>
+      )}
+
+      {/* Bouton de bascule pour le guide sur mobile */}
+      {isMobile && !guideVisible && (
+        <Button
+          type="primary"
+          shape="circle"
+          icon={<InfoCircleOutlined />}
+          onClick={handleToggleGuide}
+          className="mobile-guide-toggle"
+          style={{
+            position: 'fixed',
+            right: 20,
+            bottom: 20,
+            zIndex: 1000,
+            width: 50,
+            height: 50
+          }}
+        />
+      )}
+      {isMobile && guideVisible && (
+        <Button
+          type="primary"
+          shape="circle"
+          icon={<CloseOutlined />}
+          onClick={handleToggleGuide}
+          className="mobile-guide-toggle"
+          style={{
+            position: 'fixed',
+            right: 20,
+            bottom: 20,
+            zIndex: 1000,
+            width: 50,
+            height: 50
+          }}
+        />
+      )}
+
+      <Modal
+        title="Aide avancée"
+        open={isHelpVisible}
+        onCancel={() => setIsHelpVisible(false)}
+        footer={null}
+        width={800}
+      >
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          <Card title="Dépannage">
+            <Paragraph>
+              <Text strong>Problèmes courants :</Text>
+            </Paragraph>
+            <ul>
+              <li>Erreurs de permission - Vérifiez les droits admin</li>
+              <li>Accès au bucket - Vérifiez le rôle Storage Admin</li>
+              <li>Retards de synchronisation - La première sync peut prendre plusieurs minutes</li>
+            </ul>
+          </Card>
+
+          <Card title="Configuration avancée">
+            <Paragraph>
+              <Text strong>Paramètres personnalisés :</Text>
+            </Paragraph>
+            <ul>
+              <li>Ajustez la fréquence de synchronisation</li>
+              <li>Définissez des politiques de rétention</li>
+              <li>Configurez des filtres personnalisés</li>
+            </ul>
+          </Card>
+
+          <Button type="primary" block onClick={() => setIsHelpVisible(false)}>
+            Compris !
+          </Button>
+        </Space>
+      </Modal>
     </Layout>
   );
 };

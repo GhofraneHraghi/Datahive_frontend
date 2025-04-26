@@ -1,0 +1,70 @@
+/* Styles globaux pour la page */
+.subscription-plans-container {
+    padding: 24px;
+    background: #f9f9f9;
+    min-height: 360px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Titre principal */
+  .subscription-title {
+    text-align: center;
+    margin-bottom: 24px;
+    color: #333;
+    font-weight: bold;
+  }
+  
+  /* Style des cartes */
+  .subscription-card {
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+  
+  .subscription-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* Titre des cartes */
+  .subscription-card-title {
+    text-align: center;
+    margin: 0;
+    color: #1890ff;
+    font-weight: bold;
+  }
+  
+  /* Prix */
+  .subscription-card-price {
+    color: #52c41a;
+    font-size: 1.5rem;
+    margin-bottom: 16px;
+  }
+  
+  /* Liste des détails */
+  .subscription-card-details {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    color: #666;
+  }
+  
+  .subscription-card-details li {
+    margin-bottom: 10px;
+  }
+  
+  /* Bouton */
+  .subscription-card-button {
+    margin-top: 16px;
+    background-color: #1890ff;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+  }
+  
+  .subscription-card-button:hover {
+    background-color: #40a9ff;
+  }

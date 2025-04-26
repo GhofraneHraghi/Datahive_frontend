@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Axios from "axios";
+import './Profile.css';
 import {
   Layout,
   Typography,
@@ -34,7 +35,8 @@ import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import i18n from 'i18n-iso-countries';
 import fr from 'i18n-iso-countries/langs/fr.json';
-import NavbarUser from "../NavbarUser"; // Importation du composant Navbar
+import Navbar from "../Dashboard/Navbar"; // Importation du composant Navbar
+import axios from "axios";
 
 // Initialiser i18n avec la langue française
 i18n.registerLocale(fr);
@@ -67,7 +69,7 @@ const Profile = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       const token = localStorage.getItem("authToken");
-      const userId = localStorage.getItem("userId");
+      const userId = JSON.parse(localStorage.getItem('user')).id;
 
       if (!token || !userId) {
         message.error("Vous n'êtes pas connecté");
@@ -84,7 +86,7 @@ const Profile = () => {
 
         // Set initial form values
         companyForm.setFieldsValue({
-          company_name: response.data.company_name,
+          company: response.data.company,
           number_of_employees: response.data.number_of_employees,
         });
 
@@ -113,55 +115,108 @@ const Profile = () => {
 
   // Handle company update
   const handleCompanyUpdate = async (values) => {
-    const token = localStorage.getItem("authToken");
-    const userId = localStorage.getItem("userId");
-
-    setLoading(true);
     try {
-      const response = await Axios.put(
-        `http://localhost:3001/users/${userId}/company`,
-        { ...values, phone_number: phone, country },
+      const token = localStorage.getItem('authToken');
+      const user = JSON.parse(localStorage.getItem('user'));
+  
+      if (!token || !user) {
+        message.error("Vous n'êtes pas connecté");
+        navigate('/login');
+        return;
+      }
+      setLoading(true); // Activez le loading
+  
+      const response = await axios.put(
+        `http://localhost:3001/users/${user.id}/company`,
         {
-          headers: { Authorization: `Bearer ${token}` },
+          company_name: values.company,
+          number_of_employees: values.number_of_employees
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
         }
       );
-
-      setUserData({ ...userData, ...values, phone_number: phone, country });
-      message.success("Informations de l'entreprise mises à jour");
-      setEditingCompany(false);
+  
+      if (response.data.success) {
+        message.success("Informations de l'entreprise mises à jour");
+        // Mettre à jour l'état local si nécessaire
+        setUserData(prev => ({
+          ...prev,
+          company: values.company,
+          number_of_employees: values.number_of_employees
+        }));
+        setEditingCompany(false); // Ajoutez cette ligne pour fermer le mode édition
+      }
     } catch (error) {
-      message.error("Erreur lors de la mise à jour des informations");
-      console.error(error);
-    } finally {
-      setLoading(false);
+      console.error('Erreur:', error);
+      message.error(error.response?.data?.message || "Erreur lors de la mise à jour");
     }
+    setLoading(false); // Désactivez le loading
   };
 
   // Handle profile update
-  const handleProfileUpdate = async (values) => {
-    const token = localStorage.getItem("authToken");
-    const userId = localStorage.getItem("userId");
+ // Handle profile update - Version corrigée
+const handleProfileUpdate = async (values) => {
+  const token = localStorage.getItem("authToken");
+  const user = JSON.parse(localStorage.getItem('user'));
+  const userId = user?.id;
 
-    setLoading(true);
-    try {
-      const response = await Axios.put(
-        `http://localhost:3001/users/${userId}/profile`,
-        { ...values, phone_number: phone, country },
-        {
-          headers: { Authorization: `Bearer ${token}` },
+  if (!token || !userId) {
+    message.error("Session invalide - Veuillez vous reconnecter");
+    navigate("/login");
+    return;
+  }
+
+  setLoading(true);
+  try {
+    const response = await Axios.put(
+      `http://localhost:3001/users/${userId}/profile`,
+      { 
+        ...values, 
+        phone_number: phone,
+        country 
+      },
+      {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
-      );
+      }
+    );
 
-      setUserData({ ...userData, ...values, phone_number: phone, country });
-      message.success("Informations du profil mises à jour");
+    if (response.data.success) {
+      // Mise à jour complète des données utilisateur
+      setUserData(response.data.user);
+      
+      // Mise à jour du localStorage si nécessaire
+      localStorage.setItem('user', JSON.stringify({
+        ...user,
+        ...response.data.user
+      }));
+
+      message.success(response.data.message);
       setEditingProfile(false);
-    } catch (error) {
-      message.error("Erreur lors de la mise à jour des informations");
-      console.error(error);
-    } finally {
-      setLoading(false);
+    } else {
+      throw new Error(response.data.message || "Mise à jour échouée");
     }
-  };
+  } catch (error) {
+    console.error('Erreur détaillée:', {
+      error: error.response?.data || error.message,
+      request: error.config
+    });
+
+    // Affichage d'un message d'erreur approprié
+    const errorMessage = error.response?.data?.message || 
+      "Échec de la mise à jour du profil. Veuillez réessayer.";
+
+    message.error(errorMessage);
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Handle password update
   const handlePasswordUpdate = async (values) => {
@@ -222,25 +277,23 @@ const Profile = () => {
   };
 
   return (
-    <Layout style={{ minHeight: "100vh" }}>
+    <Layout className="profile-container">
       {/* Intégration de la Navbar */}
-      <NavbarUser onCollapse={handleSiderCollapse} />
+      <Navbar onCollapse={handleSiderCollapse} />
 
       <Layout style={{ 
-        marginLeft: window.innerWidth < 768 ? 0 : (siderCollapsed ? 80 : 200), 
-        transition: "margin-left 0.3s",
-        background: "#f0f2f5" 
+        marginLeft: window.innerWidth < 768 ? 0 : (siderCollapsed ? 80 : 250), 
+        transition: "margin-left 0.2s",
+        
       }}>
         <Content style={{ 
           margin: window.innerWidth < 768 ? "64px 16px 0" : "24px 16px 0", 
           overflow: "initial" 
         }}>
-          <div style={{ padding: 24, background: "#fff", minHeight: 360 }}>
-            <Row justify="space-between" align="middle" style={{ marginBottom: 20 }}>
-              <Col>
-                <Title level={2}>Mon Profil</Title>
-              </Col>
-              <Col>
+          <div style={{ padding: 24 }}>
+            <div className="profile-header">
+              
+                <Title level={2} className="profile-title">Mon Profil</Title>
                 <Button 
                   danger 
                   icon={<LogoutOutlined />} 
@@ -248,8 +301,7 @@ const Profile = () => {
                 >
                   Déconnexion
                 </Button>
-              </Col>
-            </Row>
+            </div>
 
             {loading ? (
               <Skeleton active paragraph={{ rows: 10 }} />
@@ -257,8 +309,9 @@ const Profile = () => {
               <>
                 {/* Company Details Section */}
                 <Card
+                   className="profile-card"
                   title={
-                    <Title level={3}>
+                    <Title level={4}>
                       <BankOutlined /> Détails de lentreprise
                     </Title>
                   }
@@ -303,7 +356,7 @@ const Profile = () => {
                     <Row gutter={24}>
                       <Col xs={24} sm={12}>
                         <Form.Item
-                          name="company_name"
+                          name="company"
                           label="Nom de l'entreprise"
                           rules={[
                             { required: true, message: "Le nom de l'entreprise est requis" },
@@ -333,6 +386,7 @@ const Profile = () => {
 
                 {/* Profile Information Section */}
                 <Card
+                  className="profile-card"
                   title={
                     <Title level={3}>
                       <UserOutlined /> Informations du profil
@@ -370,7 +424,7 @@ const Profile = () => {
                   }
                   style={{ marginBottom: 24 }}
                 >
-                  <Form
+                  <Form className="profile-form"
                     form={profileForm}
                     layout="vertical"
                     onFinish={handleProfileUpdate}
@@ -381,15 +435,22 @@ const Profile = () => {
                         <Form.Item
                           name="email"
                           label="Email"
+                          
                           rules={[
                             { required: true, type: "email", message: "Veuillez entrer un email valide" },
                           ]}
                         >
                           <Input
                             prefix={<MailOutlined />}
+                            readOnly  
                             placeholder="Email"
-                            disabled={userData.role !== "admin"} // Désactiver le champ e-mail si l'utilisateur n'est pas admin
-                          />
+                            
+                            disabled={!userData?.role} // Désactiver le champ e-mail si l'utilisateur n'est pas admin
+                            style={{
+                              color: '#888',  // Texte gris
+                              backgroundColor: '#f5f5f5',  // Fond gris clair
+                              cursor: 'not-allowed'  // Curseur 
+                            }}/>
                         </Form.Item>
                       </Col>
                       <Col xs={24} sm={12}>
@@ -463,6 +524,7 @@ const Profile = () => {
 
                 {/* Password Update Section - Now with button in the section */}
                 <Card
+                    className="profile-card password-section"
                   title={
                     <Title level={3}>
                       <LockOutlined /> Mot de passe
@@ -488,6 +550,8 @@ const Profile = () => {
 
                 {/* Subscription Section */}
                 <Card
+                  
+                  className="profile-card"
                   title={
                     <Title level={3}>
                       <CreditCardOutlined /> Abonnement
@@ -497,17 +561,21 @@ const Profile = () => {
                   <Row gutter={24} align="middle">
                     <Col xs={24} sm={12}>
                       <Text strong>Statut : </Text>
-                      {userData.subscription && userData.subscription.status === "active" ? (
-                        <Badge status="success" text="Actif" />
+                      {userData?.subscription?.status=== "active" ? (
+                        <Badge 
+                        className="subscription-badge-inactive"
+                        status="success" text="Actif" />
                       ) : (
-                        <Badge status="error" text="Inactif" />
+                        <Badge 
+                        className="subscription-badge-inactive"
+                        status="error" text="Inactif" />
                       )}
                     </Col>
                     <Col xs={24} sm={12}>
                       <Text strong>Plan : </Text>
-                      <Text>{userData.subscription ? userData.subscription.plan_name : "Aucun plan actif"}</Text>
+                      <Text>{userData?.subscription?.plan_name || "Aucun plan actif"}</Text>
                     </Col>
-                    {userData.subscription && userData.subscription.expiration_date && (
+                    {userData?.subscription?.expiration_date && (
                       <Col xs={24} style={{ marginTop: 12 }}>
                         <Text strong>Date dexpiration : </Text>
                         <Text>{new Date(userData.subscription.expiration_date).toLocaleDateString()}</Text>
