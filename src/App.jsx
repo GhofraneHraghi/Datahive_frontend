@@ -16,7 +16,10 @@ import ResetPassword from './Components/ResetPassword';
 import ChangePassword from './Components/ChangePassword';
 import ManageMember from "./Components/ManageMember/ManageMember.jsx";
 import SuccessPage from './Components/Subscription/SuccessPage.jsx';
-
+import UserList from "./Components/UserList/UserList";
+import AdminDashboard from './Components/Dashboard/AdminDashboard';
+import LoginAdmin from './Components/LoginAdmin/LoginAdmin';
+import Page from './Components/Page';
 
 
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -39,7 +42,10 @@ function App() {
         <Route path="/change-password/:token" element={<ChangePassword />} />
         <Route path="/overview" element={<OverviewPage />} />
         <Route path="/success" element={<SuccessPage />} />
-        
+        <Route path="/users" element={<UserList/>}/>
+        <Route path="/loginAdmin" element={<LoginAdmin />} />
+        <Route path="/dashboard-admin" element={<AdminDashboard/>} />
+        <Route path="/" element={<Page/>}/>
 
         <Route path="/profile" element={<Profile />} />
         {/* Route de fallback pour gérer les erreurs 404 */}

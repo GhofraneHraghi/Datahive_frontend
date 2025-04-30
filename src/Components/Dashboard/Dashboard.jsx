@@ -117,44 +117,31 @@ const Dashboard = () => {
 
   const handleSubmit = async () => {
     try {
-      if (!bucketURI || !keyFile || !tenantName) {
+      if (!bucketURI || !tenantName) {
         throw new Error('Veuillez remplir tous les champs obligatoires');
       }
 
       console.log('bucketURI:', bucketURI);
       console.log('sourceName:', tenantName);
-      console.log('keyFile:', keyFile);
-      console.log('userId:', userId); // Add this for debugging
+      console.log('userId:', userId);
 
       setLoading(true);
 
-      const formData = new FormData();
-      formData.append('bucketURI', bucketURI);
-      formData.append('sourceName', tenantName);
-      formData.append('keyFile', keyFile);
-      formData.append('userId', userId); // Add this line to include userId
-
-      const response = await fetch('http://localhost:3001/process-bucket', {
-        method: 'POST',
-        body: formData,
+      // Utilisation d'Axios au lieu de fetch pour plus de lisibilité
+      const response = await axios.post('http://localhost:3001/process-bucket', {
+        bucketURI,
+        sourceName: tenantName,
+        userId
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Erreur serveur :', errorData);
-        throw new Error(errorData.message || 'Erreur de traitement');
-      }
-
-      const data = await response.json();
       messageApi.success(`Configuration réussie pour ${tenantName}`);
 
       // Réinitialisation après succès
       form.resetFields();
-      setKeyFile(null);
       setCurrentStep(0);
 
     } catch (error) {
-      messageApi.error(error.message);
+      messageApi.error(error.response?.data?.message || error.message);
     } finally {
       setLoading(false);
     }
@@ -216,7 +203,7 @@ const Dashboard = () => {
       content: (
         <Card title="Étape 2: Configurer Google Cloud Storage" className="step-card">
           <Paragraph>
-            Connectez votre bucket Google Cloud Storage pour recevoir les données synchronisées.
+            Indiquez ladresse de votre bucket Google Cloud Storage pour recevoir les données synchronisées.
           </Paragraph>
           <Form layout="vertical">
             <Form.Item
@@ -232,28 +219,14 @@ const Dashboard = () => {
                 disabled={!hasActivePlan}
               />
             </Form.Item>
-            <Form.Item
-              label="Fichier de clé de compte de service"
-              name="keyFile"
-              rules={[{ required: true, message: 'Le fichier de clé est requis' }]}
-            >
-              <Upload
-                accept=".json"
-                fileList={keyFile ? [keyFile] : []} // Utilisez fileList
-                beforeUpload={(file) => {
-                  setKeyFile(file);
-                  return false;
-                }}
-                onRemove={() => setKeyFile(null)} // Permet de supprimer le fichier
-                maxCount={1}
-                disabled={!hasActivePlan}
-              >
-                <Button icon={<UploadOutlined />} disabled={!hasActivePlan}>
-                  {keyFile ? keyFile.name : 'Sélectionner le fichier JSON'}
-                </Button>
-              </Upload>
-            </Form.Item>
           </Form>
+          <Alert
+            message="Authentification automatique"
+            description="Notre application utilisera automatiquement les identifiants sécurisés pour accéder à votre bucket."
+            type="info"
+            showIcon
+            style={{ marginBottom: 16 }}
+          />
         </Card>
       ),
     },
@@ -448,7 +421,7 @@ const Dashboard = () => {
                   <Button 
                     type="primary"
                     onClick={() => setCurrentStep(currentStep + 1)}
-                    disabled={(currentStep === 1 && (!bucketURI || !keyFile)) || !hasActivePlan}
+                    disabled={(currentStep === 1 && (!bucketURI)) || !hasActivePlan}
                     className="nav-button next-button"
                   >
                     Suivant

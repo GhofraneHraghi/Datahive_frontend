@@ -15,14 +15,14 @@ const OverviewPage = () => {
   
   // Liste des rapports à vérifier
   const reportTypes = [
-    "reviews_files",
-    "stats_installs",
-    "stats_ratings",
-    "stats_ratings_v2",
-    "stats_crashes",
-    "stats_store_performance",
-    "acquisition_buyers_7d",
-    "acquisition_retained_installers"
+    "reviews_reviews_files",
+    "stats_stats_installs",
+    "stats_stats_ratings",
+    "stats_stats_ratings_v2",
+    "stats_stats_crashes",
+    "stats_stats_store_performance",
+    "acquisition_acquisition_buyers_7d",
+    "acquisition_acquisition_retained_installers"
   ];
 
   const handleCollapse = (isCollapsed) => {
@@ -64,7 +64,7 @@ const OverviewPage = () => {
           
           return {
             report: reportType,
-            status: reportStatus?.exists ? "OK" : "NON",
+            status: reportStatus?.exists ? "OK" : "NO",
             lastSyncedAt: tenantData.last_synced_at ? new Date(tenantData.last_synced_at).toLocaleString() : "N/A",
             details: reportStatus?.exists 
               ? "Report OK." 

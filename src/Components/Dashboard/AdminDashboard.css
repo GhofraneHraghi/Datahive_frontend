@@ -1,0 +1,87 @@
+/* AdminDashboard.css */
+
+/* Layout principal */
+.ant-layout {
+    background: #f0f2f5;
+  }
+  
+  /* Contenu principal */
+  .ant-layout-content {
+    margin: 24px 16px 0;
+    overflow: initial;
+  }
+  
+  /* Bloc blanc autour du contenu */
+  .ant-layout-content > div {
+    padding: 24px;
+    background: #fff;
+    min-height: 360px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+  }
+  
+  /* Titres */
+  .ant-typography {
+    margin-bottom: 16px;
+    color: #1e1e1e;
+  }
+  
+  .ant-typography h3 {
+    font-weight: 600;
+  }
+  
+  .ant-typography h4 {
+    font-weight: 500;
+    color: #595959;
+  }
+  
+  /* Card contenant le tableau */
+  .ant-card {
+    margin-top: 24px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+  
+  /* Spinner de chargement */
+  .ant-spin {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 50px 0;
+  }
+  
+  /* Tableau */
+  .ant-table {
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  
+  /* Entête du tableau */
+  .ant-table-thead > tr > th {
+    background-color: #fafafa;
+    font-weight: bold;
+    text-align: center;
+  }
+  
+  /* Cellules du tableau */
+  .ant-table-tbody > tr > td {
+    text-align: center;
+  }
+  
+  /* Pagination du tableau */
+  .ant-pagination {
+    margin-top: 16px;
+    text-align: center;
+  }
+  
+  /* Responsive pour petits écrans */
+  @media (max-width: 768px) {
+    .ant-layout-content > div {
+      padding: 16px;
+    }
+  
+    .ant-card {
+      margin-top: 16px;
+    }
+  }
+  
