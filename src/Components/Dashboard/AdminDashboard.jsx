@@ -1,11 +1,8 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import {
-  Layout, Typography, Card, Table, Spin
-} from 'antd';
+import { Layout, Typography, Card, Table, Spin } from 'antd';
 import NavbarAdmin from '../NavbarAdmin';
 import './AdminDashboard.css';
-
 
 const { Content } = Layout;
 const { Title } = Typography;
@@ -13,7 +10,8 @@ const { Title } = Typography;
 const AdminDashboard = () => {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [totalClients, setTotalClients] = useState(0); // Total users
+  const [totalClients, setTotalClients] = useState(0);
+  const [navbarCollapsed, setNavbarCollapsed] = useState(false);
 
   const fetchClients = async () => {
     setLoading(true);
@@ -43,23 +41,45 @@ const AdminDashboard = () => {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <NavbarAdmin title="Administration" />
-      <Layout style={{ marginLeft: 200 }}>
-        <Content style={{ margin: '24px 16px 0' }}>
-          <div style={{ padding: 24, background: '#fff' }}>
-            <Title level={3}>Utilisateurs et abonnements</Title>
-            <Title level={4}>Nombre total dutilisateurs : {totalClients}</Title>
-            <Card>
-              {loading ? <Spin /> : (
-                <Table
-                  columns={columns}
-                  dataSource={clients}
-                  rowKey="id"
-                  pagination={{ pageSize: 5 }}
-                />
-              )}
-            </Card>
-          </div>
+      <NavbarAdmin 
+        onCollapse={(collapsed) => setNavbarCollapsed(collapsed)}
+      />
+      
+      {/* Layout principal avec marge dynamique */}
+      <Layout 
+        className="site-layout"
+        style={{ 
+          marginLeft: navbarCollapsed ? 80 : 250,
+          transition: 'margin-left 0.2s cubic-bezier(0.2, 0, 0, 1)'
+        }}
+      >
+        <Content 
+          style={{ 
+            margin: '24px 16px', 
+            padding: 24,
+            minHeight: 280,
+            background: '#fff',
+            borderRadius: 8
+          }}
+        >
+          <Title level={3}>Utilisateurs et abonnements</Title>
+          <Title level={4}>Nombre total dutilisateurs : {totalClients}</Title>
+          
+          <Card>
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: '50px' }}>
+                <Spin size="large" />
+              </div>
+            ) : (
+              <Table
+                columns={columns}
+                dataSource={clients}
+                rowKey="id"
+                pagination={{ pageSize: 5 }}
+                scroll={{ x: true }}
+              />
+            )}
+          </Card>
         </Content>
       </Layout>
     </Layout>

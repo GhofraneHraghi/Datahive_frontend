@@ -100,7 +100,7 @@ const UsersList = () => {
 
       <Layout
         style={{
-          marginLeft: window.innerWidth < 768 ? 0 : siderCollapsed ? 80 : 200,
+          marginLeft: window.innerWidth < 768 ? 0 : siderCollapsed ? 80 : 250,
           transition: "margin-left 0.3s",
           background: "#f0f2f5",
         }}
