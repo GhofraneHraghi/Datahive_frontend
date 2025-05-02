@@ -14,6 +14,9 @@ const SubscriptionPlans = () => {
   const [redirecting, setRedirecting] = useState(false);
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
 
+  // Récupération de l'URL de base depuis les variables d'environnement Vite
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -21,10 +24,10 @@ const SubscriptionPlans = () => {
         const authToken = localStorage.getItem("authToken");
         
         const [plansResponse, subscriptionResponse] = await Promise.all([
-          axios.get("http://localhost:3001/api/plans", {
+          axios.get(`${API_BASE_URL}/api/plans`, {
             headers: { Authorization: `Bearer ${authToken}` }
           }),
-          axios.get("http://localhost:3001/api/check-subscription", {
+          axios.get(`${API_BASE_URL}/api/check-subscription`, {
             headers: { Authorization: `Bearer ${authToken}` }
           })
         ]);
@@ -55,7 +58,7 @@ const SubscriptionPlans = () => {
       const authToken = localStorage.getItem("authToken");
       
       const response = await axios.post(
-        'http://localhost:3001/api/create-checkout-session',
+        `${API_BASE_URL}/api/create-checkout-session`,
         { planId: plan.id },
         {
           headers: { 

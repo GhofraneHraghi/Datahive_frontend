@@ -29,7 +29,12 @@ const SubscriptionAdmin = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [editPlan, setEditPlan] = useState(null);
   const [siderCollapsed, setSiderCollapsed] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
+
+  // Récupération de l'URL de base depuis les variables d'environnement Vite
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const apiPlanUrl = `${API_BASE_URL}/api/plan`;
 
   const handleSiderCollapse = (collapsed) => {
     setSiderCollapsed(collapsed);
@@ -38,43 +43,54 @@ const SubscriptionAdmin = () => {
   useEffect(() => {
     const fetchPlans = async () => {
       try {
-        const response = await axios.get("http://localhost:3001/api/plan");
-        setPlans(response.data);
+        setLoading(true);
+        const response = await axios.get(apiPlanUrl);
+        setPlans(Array.isArray(response.data) ? response.data : []);
       } catch (error) {
         console.error("Erreur lors de la récupération des plans :", error);
         message.error("Erreur lors du chargement des plans.");
+        setPlans([]);
+      } finally {
+        setLoading(false);
       }
     };
     fetchPlans();
-  }, []);
+  }, [apiPlanUrl]);
 
   const handleAddOrUpdatePlan = async (values) => {
     try {
+      setLoading(true);
       if (editPlan) {
-        const response = await axios.put(`http://localhost:3001/api/plan/${editPlan.id}`, values);
+        const response = await axios.put(`${apiPlanUrl}/${editPlan.id}`, values);
         setPlans(plans.map((p) => (p.id === editPlan.id ? response.data : p)));
+        message.success("Plan mis à jour avec succès !");
       } else {
-        const response = await axios.post("http://localhost:3001/api/plan", values);
+        const response = await axios.post(apiPlanUrl, values);
         setPlans([...plans, response.data]);
+        message.success("Plan ajouté avec succès !");
       }
       setOpenDialog(false);
       setEditPlan(null);
       form.resetFields();
-      message.success("Plan enregistré avec succès !");
     } catch (error) {
       console.error("Erreur lors de l'ajout ou de la mise à jour :", error);
-      message.error("Une erreur s'est produite.");
+      message.error(error.response?.data?.message || "Une erreur s'est produite.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleDeletePlan = async (id) => {
     try {
-      await axios.delete(`http://localhost:3001/api/plan/${id}`);
+      setLoading(true);
+      await axios.delete(`${apiPlanUrl}/${id}`);
       setPlans(plans.filter((plan) => plan.id !== id));
       message.success("Plan supprimé avec succès !");
     } catch (error) {
       console.error("Erreur lors de la suppression :", error);
-      message.error("Erreur lors de la suppression.");
+      message.error(error.response?.data?.message || "Erreur lors de la suppression.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -136,8 +152,19 @@ const SubscriptionAdmin = () => {
                     title={plan.name}
                     extra={
                       <Space>
-                        <Button icon={<EditOutlined />} type="text" onClick={() => showEditPlanModal(plan)} />
-                        <Button icon={<DeleteOutlined />} type="text" danger onClick={() => handleDeletePlan(plan.id)} />
+                        <Button 
+                          icon={<EditOutlined />} 
+                          type="text" 
+                          onClick={() => showEditPlanModal(plan)}
+                          disabled={loading}
+                        />
+                        <Button 
+                          icon={<DeleteOutlined />} 
+                          type="text" 
+                          danger 
+                          onClick={() => handleDeletePlan(plan.id)}
+                          disabled={loading}
+                        />
                       </Space>
                     }
                   >
@@ -164,6 +191,7 @@ const SubscriptionAdmin = () => {
           setEditPlan(null);
         }}
         footer={null}
+        destroyOnClose
       >
         <Form
           form={form}
@@ -204,8 +232,10 @@ const SubscriptionAdmin = () => {
 
           <Form.Item>
             <Space>
-              <Button onClick={() => setOpenDialog(false)}>Annuler</Button>
-              <Button type="primary" htmlType="submit">
+              <Button onClick={() => setOpenDialog(false)} disabled={loading}>
+                Annuler
+              </Button>
+              <Button type="primary" htmlType="submit" loading={loading}>
                 Sauvegarder
               </Button>
             </Space>

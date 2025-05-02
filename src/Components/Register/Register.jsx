@@ -8,8 +8,8 @@ import { Link } from 'react-router-dom';
 import Axios from 'axios';
 import i18n from 'i18n-iso-countries';
 import fr from 'i18n-iso-countries/langs/fr.json';
-import { signInWithGoogle } from "../../components/firebase";
-import './Register.css'; // Create this CSS file for custom styles
+import { signInWithGoogle } from "../../Components/firebase";
+import './Register.css';
 
 i18n.registerLocale(fr);
 
@@ -24,7 +24,9 @@ const Register = () => {
   const [googleSignIn, setGoogleSignIn] = useState(false);
   const [formComplete, setFormComplete] = useState(false);
 
-  // Monitor form fields to check completeness
+  // Récupération de l'URL de base depuis les variables d'environnement Vite
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
   useEffect(() => {
     const checkFormComplete = () => {
       try {
@@ -75,7 +77,7 @@ const Register = () => {
         phoneNumber: phone,
       });
       
-      const response = await Axios.post('http://localhost:3001/register', {
+      const response = await Axios.post(`${API_BASE_URL}/register`, {
         email: values.email,
         firstName: values.firstName,
         lastName: values.lastName,

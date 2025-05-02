@@ -42,6 +42,9 @@ const Dashboard = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [currentPage, setCurrentPage] = useState('accueil');
 
+  // Récupération de l'URL de base depuis les variables d'environnement Vite
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
   useEffect(() => {
     // Vérifier si l'utilisateur est connecté
     const user = JSON.parse(localStorage.getItem('user'));
@@ -83,7 +86,7 @@ const Dashboard = () => {
     }
 
     try {
-      const res = await axios.get(`http://localhost:3001/user-subscription/${user.id}`, {
+      const res = await axios.get(`${API_BASE_URL}/user-subscription/${user.id}`, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -128,7 +131,7 @@ const Dashboard = () => {
       setLoading(true);
 
       // Utilisation d'Axios au lieu de fetch pour plus de lisibilité
-      const response = await axios.post('http://localhost:3001/process-bucket', {
+      const response = await axios.post(`${API_BASE_URL}/process-bucket`, {
         bucketURI,
         sourceName: tenantName,
         userId

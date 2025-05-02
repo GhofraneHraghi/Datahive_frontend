@@ -13,16 +13,23 @@ const AdminDashboard = () => {
   const [totalClients, setTotalClients] = useState(0);
   const [navbarCollapsed, setNavbarCollapsed] = useState(false);
 
+  // Récupération de l'URL de base depuis les variables d'environnement
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
   const fetchClients = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:3001/api/clients'); 
-      setClients(response.data.clients);
-      setTotalClients(response.data.totalClients);
+      const response = await axios.get(`${API_BASE_URL}/api/clients`);
+      setClients(response.data.clients || []);
+      setTotalClients(response.data.totalClients || 0);
     } catch (error) {
       console.error('Erreur lors de la récupération des clients :', error);
+      // Gestion des erreurs améliorée
+      setClients([]);
+      setTotalClients(0);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -45,7 +52,6 @@ const AdminDashboard = () => {
         onCollapse={(collapsed) => setNavbarCollapsed(collapsed)}
       />
       
-      {/* Layout principal avec marge dynamique */}
       <Layout 
         className="site-layout"
         style={{ 

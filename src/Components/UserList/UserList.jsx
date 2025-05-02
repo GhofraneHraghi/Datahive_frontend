@@ -27,6 +27,9 @@ const UsersList = () => {
   const [editForm] = Form.useForm();
   const [addForm] = Form.useForm();
 
+  // Récupération de l'URL de base depuis les variables d'environnement Vite
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
   const handleSiderCollapse = (collapsed) => {
     setSiderCollapsed(collapsed);
   };
@@ -37,7 +40,7 @@ const UsersList = () => {
 
   const fetchEmployee = async () => {
     try {
-      const response = await axios.get(`http://localhost:3001/api/employee`, {
+      const response = await axios.get(`${API_BASE_URL}/api/employee`, {
         params: { page, limit },
       });
       setEmployee(response.data);
@@ -56,7 +59,7 @@ const UsersList = () => {
 
   const handleUpdateEmployee = async (values) => {
     try {
-      await axios.patch(`http://localhost:3001/api/employee/${editingEmployee.id}`, values);
+      await axios.patch(`${API_BASE_URL}/api/employee/${editingEmployee.id}`, values);
       message.success("Employé mis à jour avec succès !");
       setIsEditModalVisible(false);
       fetchEmployee();
@@ -68,7 +71,7 @@ const UsersList = () => {
 
   const handleDeleteEmployee = async (employeeId) => {
     try {
-      await axios.delete(`http://localhost:3001/api/employee/${employeeId}`);
+      await axios.delete(`${API_BASE_URL}/api/employee/${employeeId}`);
       message.success("Employé supprimé avec succès !");
       fetchEmployee();
     } catch (error) {
@@ -79,7 +82,7 @@ const UsersList = () => {
 
   const handleAddEmployee = async (values) => {
     try {
-      await axios.post(`http://localhost:3001/api/employee`, values);
+      await axios.post(`${API_BASE_URL}/api/employee`, values);
       message.success("Employé ajouté avec succès. Un email a été envoyé avec les informations de connexion.");
       addForm.resetFields();
       setIsAddModalVisible(false);

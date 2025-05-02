@@ -65,6 +65,9 @@ const Profile = () => {
     setSiderCollapsed(collapsed);
   };
 
+  // Récupération de l'URL de base depuis les variables d'environnement Vite
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
   // Fetch user data on component mount
   useEffect(() => {
     const fetchUserData = async () => {
@@ -78,7 +81,7 @@ const Profile = () => {
       }
 
       try {
-        const response = await Axios.get(`http://localhost:3001/users/${userId}`, {
+        const response = await Axios.get(`${API_BASE_URL}/users/${userId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -127,7 +130,7 @@ const Profile = () => {
       setLoading(true); // Activez le loading
   
       const response = await axios.put(
-        `http://localhost:3001/users/${user.id}/company`,
+        `${API_BASE_URL}/users/${user.id}/company`,
         {
           company_name: values.company,
           number_of_employees: values.number_of_employees
@@ -173,7 +176,7 @@ const handleProfileUpdate = async (values) => {
   setLoading(true);
   try {
     const response = await Axios.put(
-      `http://localhost:3001/users/${userId}/profile`,
+      `${API_BASE_URL}/users/${userId}/profile`,
       { 
         ...values, 
         phone_number: phone,
@@ -226,7 +229,7 @@ const handleProfileUpdate = async (values) => {
     setLoading(true);
     try {
       const response = await Axios.put(
-        `http://localhost:3001/users/${userId}/password`,
+        `${API_BASE_URL}/users/${userId}/password`,
         values,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -262,7 +265,7 @@ const handleProfileUpdate = async (values) => {
     setLoading(true);
     try {
       const response = await Axios.post(
-        `http://localhost:3001/api/reset-password-request`,
+        `${API_BASE_URL}/api/reset-password-request`,
         { email: userData.email }
       );
 

@@ -12,11 +12,14 @@ const LoginAdmin = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+
+  // Récupération de l'URL de base depuis les variables d'environnement Vite
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   // Fonction pour gérer l'envoi du formulaire classique (email et mot de passe)
   const onFinish = async (values) => {
     setLoading(true);
     try {
-      const response = await Axios.post("http://localhost:3001/loginAdmin", values);
+      const response = await Axios.post(`${API_BASE_URL}/loginAdmin`, values);
       if (response.data.token) {
         localStorage.setItem("authToken", response.data.token);
         localStorage.setItem("employeeId", response.data.employeeId);
@@ -40,7 +43,7 @@ const LoginAdmin = () => {
     const user = await signInWithGoogle();
     if (user) {
       try {
-        const response = await Axios.post("http://localhost:3001/google-login", {
+        const response = await Axios.post(`${API_BASE_URL}/google-login`, {
           email: user.email,
         });
 
@@ -102,7 +105,7 @@ const LoginAdmin = () => {
         </Button>
 
         <Text>
-          Vous n'avez pas de compte ? <Link to="/register">S'inscrire</Link>
+          Vous navez pas de compte ? <Link to="/register">Sinscrire</Link>
         </Text>
       </Card>
     </div>

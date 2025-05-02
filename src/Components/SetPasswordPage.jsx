@@ -9,6 +9,10 @@ const SetPasswordPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+ 
+
+   // Récupération de l'URL de base depuis les variables d'environnement Vite
+   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,7 +24,7 @@ const SetPasswordPage = () => {
     }
 
     try {
-      const response = await axios.post('http://localhost:3001/api/set-password', {
+      const response = await axios.post(`${API_BASE_URL}/api/set-password`, {
         token,
         password,
       });

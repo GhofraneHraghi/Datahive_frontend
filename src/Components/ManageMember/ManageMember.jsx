@@ -17,6 +17,9 @@ const ManageMember = () => {
   const [remainingQuota, setRemainingQuota] = useState(0);
   const [siderCollapsed, setSiderCollapsed] = useState(false);
 
+  // Récupération de l'URL de base depuis les variables d'environnement Vite
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
   const handleSiderCollapse = (collapsed) => {
     setSiderCollapsed(collapsed);
   };
@@ -31,13 +34,13 @@ const ManageMember = () => {
 
     try {
       // Récupérer les données de l'utilisateur connecté
-      const userResponse = await axios.get("http://localhost:3001/api/user-data", {
+      const userResponse = await axios.get(`${API_BASE_URL}/api/user-data`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUserData(userResponse.data.user);
 
       // Récupérer les membres associés à l'utilisateur
-      const membersResponse = await axios.get("http://localhost:3001/api/members", {
+      const membersResponse = await axios.get(`${API_BASE_URL}/api/members`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMembers(membersResponse.data.members);
@@ -69,7 +72,7 @@ const ManageMember = () => {
     try {
       const token = localStorage.getItem("authToken");
       const response = await axios.post(
-        "http://localhost:3001/api/add-members",
+        `${API_BASE_URL}/api/add-members`,
         { email: newMemberEmail },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -90,7 +93,7 @@ const ManageMember = () => {
   const handleDeleteMember = async (memberId) => {
     try {
       const token = localStorage.getItem("authToken");
-      await axios.delete(`http://localhost:3001/api/delete_members/${memberId}`, {
+      await axios.delete(`${API_BASE_URL}/api/delete_members/${memberId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -151,91 +154,91 @@ const ManageMember = () => {
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
-    <Navbar onCollapse={handleSiderCollapse} />
-    <Layout
-      style={{
-        marginLeft: siderCollapsed ? 80 : 250,
-        transition: "margin-left 0.3s",
-        background: "#f0f2f5",
-      }}
-    >
-      <Content style={{ margin: "24px 16px 0", overflow: "initial" }}>
-        <div className="manage-member-container">
-          <Title level={3} className="manage-member-title">
-            <TeamOutlined /> Gérer les Membres
-          </Title>
-  
-          {/* Informations de l'utilisateur connecté */}
-          <Card
-            title="Informations de l'utilisateur connecté"
-            className="manage-member-card"
-          >
-            <p>
-              <Text strong>Nom :</Text> {userData?.first_name} {userData?.last_name}
-            </p>
-            <p>
-              <Text strong>Email :</Text> {userData?.email}
-            </p>
-            <p>
-              <Text strong>Abonnement :</Text> {userData?.subscription?.plan?.name || "Aucun"}
-            </p>
-            <p>
-              <Text strong>Statut :</Text>{" "}
-              {userData?.subscription?.status === "active" ? (
-                <Badge status="success" text="Actif" />
-              ) : (
-                <Badge status="error" text="Inactif" />
-              )}
-            </p>
-          </Card>
-  
-          {/* Liste des membres */}
-          <Card
-            title="Liste des Membres"
-            className="manage-member-card"
-            extra={
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                className="add-member-button"
-                onClick={() => setIsAddMemberModalVisible(true)}
-                disabled={remainingQuota <= 0}
-              >
-                Ajouter un membre
-              </Button>
-            }
-          >
-            {userData && userData.subscription && userData.subscription.plan && (
+      <Navbar onCollapse={handleSiderCollapse} />
+      <Layout
+        style={{
+          marginLeft: siderCollapsed ? 80 : 250,
+          transition: "margin-left 0.3s",
+          background: "#f0f2f5",
+        }}
+      >
+        <Content style={{ margin: "24px 16px 0", overflow: "initial" }}>
+          <div className="manage-member-container">
+            <Title level={3} className="manage-member-title">
+              <TeamOutlined /> Gérer les Membres
+            </Title>
+    
+            {/* Informations de l'utilisateur connecté */}
+            <Card
+              title="Informations de l'utilisateur connecté"
+              className="manage-member-card"
+            >
               <p>
-                <Text strong>Quota disponible :</Text> {remainingQuota} / {userData.subscription.plan.quota_limit} membres
+                <Text strong>Nom :</Text> {userData?.first_name} {userData?.last_name}
               </p>
-            )}
-            <Table
-              columns={columns}
-              dataSource={members.map((member) => ({ ...member, key: member.id }))}
-              pagination={false}
-              locale={{ emptyText: "Aucun membre trouvé" }}
-            />
-          </Card>
-  
-          <Modal
-            title="Ajouter un membre"
-            visible={isAddMemberModalVisible}
-            onCancel={() => setIsAddMemberModalVisible(false)}
-            onOk={handleAddMember}
-            okText="Ajouter"
-            cancelText="Annuler"
-          >
-            <Input
-              placeholder="Email du membre"
-              value={newMemberEmail}
-              onChange={(e) => setNewMemberEmail(e.target.value)}
-            />
-          </Modal>
-        </div>
-      </Content>
+              <p>
+                <Text strong>Email :</Text> {userData?.email}
+              </p>
+              <p>
+                <Text strong>Abonnement :</Text> {userData?.subscription?.plan?.name || "Aucun"}
+              </p>
+              <p>
+                <Text strong>Statut :</Text>{" "}
+                {userData?.subscription?.status === "active" ? (
+                  <Badge status="success" text="Actif" />
+                ) : (
+                  <Badge status="error" text="Inactif" />
+                )}
+              </p>
+            </Card>
+    
+            {/* Liste des membres */}
+            <Card
+              title="Liste des Membres"
+              className="manage-member-card"
+              extra={
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  className="add-member-button"
+                  onClick={() => setIsAddMemberModalVisible(true)}
+                  disabled={remainingQuota <= 0}
+                >
+                  Ajouter un membre
+                </Button>
+              }
+            >
+              {userData && userData.subscription && userData.subscription.plan && (
+                <p>
+                  <Text strong>Quota disponible :</Text> {remainingQuota} / {userData.subscription.plan.quota_limit} membres
+                </p>
+              )}
+              <Table
+                columns={columns}
+                dataSource={members.map((member) => ({ ...member, key: member.id }))}
+                pagination={false}
+                locale={{ emptyText: "Aucun membre trouvé" }}
+              />
+            </Card>
+    
+            <Modal
+              title="Ajouter un membre"
+              visible={isAddMemberModalVisible}
+              onCancel={() => setIsAddMemberModalVisible(false)}
+              onOk={handleAddMember}
+              okText="Ajouter"
+              cancelText="Annuler"
+            >
+              <Input
+                placeholder="Email du membre"
+                value={newMemberEmail}
+                onChange={(e) => setNewMemberEmail(e.target.value)}
+              />
+            </Modal>
+          </div>
+        </Content>
+      </Layout>
     </Layout>
-  </Layout>
   );
 };
 
