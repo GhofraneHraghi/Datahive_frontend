@@ -1,4 +1,3 @@
-vim src/Components/Register/Register.jsx
 import { useState, useEffect } from 'react';
 import { Form, Input, Button, Card, Typography, Row, Col, Select, message as antMessage } from 'antd';
 import { UserOutlined, MailOutlined, IdcardOutlined, GoogleOutlined } from '@ant-design/icons';
