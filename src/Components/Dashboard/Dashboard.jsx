@@ -131,7 +131,7 @@ const Dashboard = () => {
       setLoading(true);
 
       // Utilisation d'Axios au lieu de fetch pour plus de lisibilité
-      const response = await axios.post(`${API_BASE_URL}/process-bucket`, {
+      const response = await axios.post(`${API_BASE_URL}/api/process-bucket`, {
         bucketURI,
         sourceName: tenantName,
         userId

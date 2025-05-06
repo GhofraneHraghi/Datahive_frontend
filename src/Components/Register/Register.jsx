@@ -76,7 +76,7 @@ const Register = () => {
         phoneNumber: phone,
       });
       
-      const response = await Axios.post(`${API_BASE_URL}/register`, {
+      const response = await Axios.post(`${API_BASE_URL}/api/register`, {
         email: values.email,
         firstName: values.firstName,
         lastName: values.lastName,
