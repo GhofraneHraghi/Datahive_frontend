@@ -17,7 +17,7 @@ import './Navbar.css';
 const { Sider } = Layout;
 const { Title } = Typography;
 
-const Navbar = ({ title = "BigDeal Analytics", onCollapse, onPageChange }) => {
+const Navbar = ({ title = "Data Hive", onCollapse, onPageChange }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
