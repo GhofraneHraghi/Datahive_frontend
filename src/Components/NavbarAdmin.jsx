@@ -17,7 +17,7 @@ import './NavbarAdmin.css';
 const { Sider } = Layout;
 const { Title } = Typography;
 
-const NavbarAdmin = ({ title = "BigDeal Analytics", onCollapse, onPageChange }) => {
+const NavbarAdmin = ({ title = "Data Hive", onCollapse, onPageChange }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
