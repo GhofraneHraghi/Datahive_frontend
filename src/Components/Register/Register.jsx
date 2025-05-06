@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Form, Input, Button, Card, Typography, Row, Col, Select, message as antMessage } from 'antd';
 import { UserOutlined, MailOutlined, IdcardOutlined, GoogleOutlined } from '@ant-design/icons';
@@ -77,7 +76,7 @@ const Register = () => {
         phoneNumber: phone,
       });
       
-      const response = await Axios.post(`${API_BASE_URL}/register`, {
+      const response = await Axios.post(`${API_BASE_URL}/api/register`, {
         email: values.email,
         firstName: values.firstName,
         lastName: values.lastName,
