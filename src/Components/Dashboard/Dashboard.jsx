@@ -86,7 +86,7 @@ const Dashboard = () => {
     }
 
     try {
-      const res = await axios.get(`${API_BASE_URL}/user-subscription/${user.id}`, {
+      const res = await axios.get(`http://51.38.187.245/api/user-subscription/${user.id}`, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -131,7 +131,7 @@ const Dashboard = () => {
       setLoading(true);
 
       // Utilisation d'Axios au lieu de fetch pour plus de lisibilité
-      const response = await axios.post(`${API_BASE_URL}/api/process-bucket`, {
+      const response = await axios.post(`http://51.38.187.245/api/process-bucket`, {
         bucketURI,
         sourceName: tenantName,
         userId
