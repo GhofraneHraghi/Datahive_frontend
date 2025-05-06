@@ -19,6 +19,7 @@ import './Dashboard.css';
 const { Header, Content, Footer, Sider } = Layout;
 const { Step } = Steps;
 const { Title, Text, Paragraph } = Typography;
+const BASE_URL = import.meta.env.BASE_URL;
 
 const Dashboard = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -86,7 +87,7 @@ const Dashboard = () => {
     }
 
     try {
-      const res = await axios.get(`http://51.38.187.245/api/user-subscription/${user.id}`, {
+      const res = await axios.get(`${BASE_URL}/api/user-subscription/${user.id}`, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -131,7 +132,7 @@ const Dashboard = () => {
       setLoading(true);
 
       // Utilisation d'Axios au lieu de fetch pour plus de lisibilité
-      const response = await axios.post(`http://51.38.187.245/api/process-bucket`, {
+      const response = await axios.post(`${BASE_URL}/api/process-bucket`, {
         bucketURI,
         sourceName: tenantName,
         userId
