@@ -47,7 +47,7 @@ const Login = () => {
 
     // Store user data and token in localStorage
     localStorage.setItem("user", JSON.stringify(userData));
-    localStorage.setItem("authToken", token);
+    localStorage.setItem("token", token);
     
     // Navigate to dashboard
     navigate("/dashboard");

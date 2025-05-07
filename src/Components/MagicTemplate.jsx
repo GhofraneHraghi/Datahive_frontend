@@ -1,54 +1,59 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { Button, message } from 'antd';
 
 const MagicTemplate = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
   const fetchLookerLink = async () => {
-    setIsLoading(true);
-    setError(null);
-    
+    setLoading(true);
     try {
+      // Récupération cohérente du token
       const token = localStorage.getItem('token');
       if (!token) {
-        throw new Error('Aucun token trouvé - veuillez vous connecter');
+        throw new Error('Veuillez vous connecter à nouveau');
       }
 
-      console.log('Envoi de la requête avec token:', token); // Debug
-      const res = await axios.get('http://votre-backend/api/looker-link', {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      const response = await axios.get(
+        `${VITE_BACKEND_BASE_URL}/api/looker-link`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
         }
-      });
+      );
 
-      if (!res.data?.url) {
+      if (!response.data?.url) {
         throw new Error('Réponse inattendue du serveur');
       }
 
-      window.open(res.data.url, '_blank', 'noopener,noreferrer');
+      window.open(response.data.url, '_blank', 'noopener,noreferrer');
       
-    } catch (err) {
-      console.error('Erreur complète:', err);
-      setError(err.message);
-      alert(`Erreur: ${err.message}\n${err.response?.data?.details || ''}`);
+    } catch (error) {
+      console.error('Erreur:', error);
+      message.error(error.response?.data?.message || error.message);
+      
+      // Redirection si token invalide
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div>
-      <button 
-        onClick={fetchLookerLink} 
-        disabled={isLoading}
-        style={{ padding: '10px 20px' }}
-      >
-        {isLoading ? 'Chargement...' : 'Ouvrir Looker Studio'}
-      </button>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-    </div>
+    <Button 
+      type="primary" 
+      onClick={fetchLookerLink}
+      loading={loading}
+    >
+      Ouvrir Looker Studio
+    </Button>
   );
 };
 
