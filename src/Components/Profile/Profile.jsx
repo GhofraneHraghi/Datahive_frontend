@@ -81,7 +81,7 @@ const Profile = () => {
       }
 
       try {
-        const response = await Axios.get(`${API_BASE_URL}/users/${userId}`, {
+        const response = await Axios.get(`${API_BASE_URL}/api/users/${userId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -130,7 +130,7 @@ const Profile = () => {
       setLoading(true); // Activez le loading
   
       const response = await axios.put(
-        `${API_BASE_URL}/users/${user.id}/company`,
+        `${API_BASE_URL}/api/users/${user.id}/company`,
         {
           company_name: values.company,
           number_of_employees: values.number_of_employees
@@ -176,7 +176,7 @@ const handleProfileUpdate = async (values) => {
   setLoading(true);
   try {
     const response = await Axios.put(
-      `${API_BASE_URL}/users/${userId}/profile`,
+      `${API_BASE_URL}/api/users/${userId}/profile`,
       { 
         ...values, 
         phone_number: phone,
@@ -229,7 +229,7 @@ const handleProfileUpdate = async (values) => {
     setLoading(true);
     try {
       const response = await Axios.put(
-        `${API_BASE_URL}/users/${userId}/password`,
+        `${API_BASE_URL}/api/users/${userId}/password`,
         values,
         {
           headers: { Authorization: `Bearer ${token}` },

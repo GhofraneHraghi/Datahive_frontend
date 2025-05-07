@@ -19,7 +19,7 @@ const Login = () => {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const fetchSubscriptionInfo = async (userId, token) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/user-subscription/${userId}`, {
+      const response = await axios.get(`${API_BASE_URL}/api/user-subscription/${userId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return response.data.subscription;
@@ -76,7 +76,7 @@ const Login = () => {
     setGoogleLoading(true);
     try {
       const result = await signInWithPopup(auth, googleProvider);
-      const response = await axios.post(`${API_BASE_URL}/google-login`, {
+      const response = await axios.post(`${API_BASE_URL}/api/google-login`, {
         email: result.user.email,
       });
   
