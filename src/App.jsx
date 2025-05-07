@@ -20,7 +20,7 @@ import UserList from "./Components/UserList/UserList";
 import AdminDashboard from './Components/Dashboard/AdminDashboard';
 import LoginAdmin from './Components/LoginAdmin/LoginAdmin';
 import Page from './Components/page';
-
+import MagicTemplate from './Components/MagicTemplate';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -46,6 +46,7 @@ function App() {
         <Route path="/loginAdmin" element={<LoginAdmin />} />
         <Route path="/dashboard-admin" element={<AdminDashboard/>}/>
         <Route path="/" element={<Page/>}/>
+        <Route path="/magic-template" element={<MagicTemplate />} />
 
         <Route path="/profile" element={<Profile />} />
         {/* Route de fallback pour gérer les erreurs 404 */}
