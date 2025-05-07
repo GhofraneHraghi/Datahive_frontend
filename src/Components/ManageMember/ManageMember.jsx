@@ -18,7 +18,7 @@ const ManageMember = () => {
   const [siderCollapsed, setSiderCollapsed] = useState(false);
 
   // Récupération de l'URL de base depuis les variables d'environnement Vite
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
   const handleSiderCollapse = (collapsed) => {
     setSiderCollapsed(collapsed);
@@ -34,13 +34,13 @@ const ManageMember = () => {
 
     try {
       // Récupérer les données de l'utilisateur connecté
-      const userResponse = await axios.get(`${API_BASE_URL}/api/user-data`, {
+      const userResponse = await axios.get(`${VITE_BACKEND_BASE_URL}/api/user-data`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUserData(userResponse.data.user);
 
       // Récupérer les membres associés à l'utilisateur
-      const membersResponse = await axios.get(`${API_BASE_URL}/api/members`, {
+      const membersResponse = await axios.get(`${VITE_BACKEND_BASE_URL}/api/members`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMembers(membersResponse.data.members);
@@ -72,7 +72,7 @@ const ManageMember = () => {
     try {
       const token = localStorage.getItem("authToken");
       const response = await axios.post(
-        `${API_BASE_URL}/api/add-members`,
+        `${VITE_BACKEND_BASE_URL}/api/add-members`,
         { email: newMemberEmail },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -93,7 +93,7 @@ const ManageMember = () => {
   const handleDeleteMember = async (memberId) => {
     try {
       const token = localStorage.getItem("authToken");
-      await axios.delete(`${API_BASE_URL}/api/delete_members/${memberId}`, {
+      await axios.delete(`${VITE_BACKEND_BASE_URL}/api/delete_members/${memberId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

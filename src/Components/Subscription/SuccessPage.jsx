@@ -17,7 +17,7 @@ const SuccessPage = () => {
   const sessionId = params.get('session_id');
 
   // Récupération de l'URL de base depuis les variables d'environnement Vite
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
   
   useEffect(() => {
     const authToken = localStorage.getItem('authToken');
@@ -33,7 +33,7 @@ const SuccessPage = () => {
       
       try {
         const response = await axios.get(
-          `${API_BASE_URL}/api/verify-session?session_id=${sessionId}`,
+          `${VITE_BACKEND_BASE_URL}/api/verify-session?session_id=${sessionId}`,
           { 
             headers: { 
               Authorization: `Bearer ${authToken}`

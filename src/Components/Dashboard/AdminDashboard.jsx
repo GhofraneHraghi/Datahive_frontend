@@ -14,12 +14,12 @@ const AdminDashboard = () => {
   const [navbarCollapsed, setNavbarCollapsed] = useState(false);
 
   // Récupération de l'URL de base depuis les variables d'environnement
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
   const fetchClients = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/clients`);
+      const response = await axios.get(`${VITE_BACKEND_BASE_URL}/api/clients`);
       setClients(response.data.clients || []);
       setTotalClients(response.data.totalClients || 0);
     } catch (error) {

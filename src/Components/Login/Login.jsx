@@ -16,10 +16,10 @@ const Login = () => {
   const navigate = useNavigate();
   
   // Récupération de l'URL de base depuis les variables d'environnement Vite
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
   const fetchSubscriptionInfo = async (userId, token) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/user-subscription/${userId}`, {
+      const response = await axios.get(`${VITE_BACKEND_BASE_URL}/api/user-subscription/${userId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return response.data.subscription;
@@ -56,7 +56,7 @@ const Login = () => {
   const handleLogin = async (values) => {
     setLoading(true);
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/login`, {
+      const response = await axios.post(`${VITE_BACKEND_BASE_URL}/api/login`, {
         email: values.email,
         password: values.password,
       });
@@ -76,7 +76,7 @@ const Login = () => {
     setGoogleLoading(true);
     try {
       const result = await signInWithPopup(auth, googleProvider);
-      const response = await axios.post(`${API_BASE_URL}/api/google-login`, {
+      const response = await axios.post(`${VITE_BACKEND_BASE_URL}/api/google-login`, {
         email: result.user.email,
       });
   

@@ -19,7 +19,7 @@ import './Dashboard.css';
 const {  Content, Footer, Sider } = Layout;
 const { Step } = Steps;
 const { Title, Text, Paragraph } = Typography;
-const BASE_URL = import.meta.env.BASE_URL;
+const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
 const Dashboard = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -42,9 +42,6 @@ const Dashboard = () => {
   const [navbarCollapsed, setNavbarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [currentPage, setCurrentPage] = useState('accueil');
-
-  // Récupération de l'URL de base depuis les variables d'environnement Vite
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     // Vérifier si l'utilisateur est connecté
@@ -87,7 +84,7 @@ const Dashboard = () => {
     }
 
     try {
-      const res = await axios.get(`${BASE_URL}/api/user-subscription/${user.id}`, {
+      const res = await axios.get(`${VITE_BACKEND_BASE_URL}/api/user-subscription/${user.id}`, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -132,7 +129,7 @@ const Dashboard = () => {
       setLoading(true);
 
       // Utilisation d'Axios au lieu de fetch pour plus de lisibilité
-      const response = await axios.post(`${API_BASE_URL}/api/process-bucket`, {
+      const response = await axios.post(`${VITE_BACKEND_BASE_URL}/api/process-bucket`, {
         bucketURI,
         sourceName: tenantName,
         userId

@@ -14,7 +14,7 @@ const OverviewPage = () => {
   const [collapsed, setCollapsed] = useState(false);
   
    // Récupération de l'URL de base depuis les variables d'environnement Vite
-   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+   const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
   // Liste des rapports à vérifier
   const reportTypes = [
     "reviews_reviews_files",
@@ -45,7 +45,7 @@ const OverviewPage = () => {
         }
         
         // Récupérer les informations du tenant de l'utilisateur
-        const tenantResponse = await axios.get(`${API_BASE_URL}/api/client/tenant`, {
+        const tenantResponse = await axios.get(`${VITE_BACKEND_BASE_URL}/api/client/tenant`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -56,7 +56,7 @@ const OverviewPage = () => {
         }
         
         // Récupérer le statut de chaque rapport pour ce tenant
-        const reportsStatusResponse = await axios.get(`${API_BASE_URL}/api/reports/status`, {
+        const reportsStatusResponse = await axios.get(`${VITE_BACKEND_BASE_URL}/api/reports/status`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         

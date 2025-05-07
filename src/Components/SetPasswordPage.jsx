@@ -12,7 +12,7 @@ const SetPasswordPage = () => {
  
 
    // Récupération de l'URL de base depuis les variables d'environnement Vite
-   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+   const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,7 +24,7 @@ const SetPasswordPage = () => {
     }
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/set-password`, {
+      const response = await axios.post(`${VITE_BACKEND_BASE_URL}/api/set-password`, {
         token,
         password,
       });

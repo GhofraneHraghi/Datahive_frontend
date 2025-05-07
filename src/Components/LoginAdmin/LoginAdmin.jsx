@@ -14,12 +14,12 @@ const LoginAdmin = () => {
 
 
   // Récupération de l'URL de base depuis les variables d'environnement Vite
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
   // Fonction pour gérer l'envoi du formulaire classique (email et mot de passe)
   const onFinish = async (values) => {
     setLoading(true);
     try {
-      const response = await Axios.post(`${API_BASE_URL}/api/loginAdmin`, values);
+      const response = await Axios.post(`${VITE_BACKEND_BASE_URL}/api/loginAdmin`, values);
       if (response.data.token) {
         localStorage.setItem("authToken", response.data.token);
         localStorage.setItem("employeeId", response.data.employeeId);
@@ -43,7 +43,7 @@ const LoginAdmin = () => {
     const user = await signInWithGoogle();
     if (user) {
       try {
-        const response = await Axios.post(`${API_BASE_URL}/api/google-login`, {
+        const response = await Axios.post(`${VITE_BACKEND_BASE_URL}/api/google-login`, {
           email: user.email,
         });
 

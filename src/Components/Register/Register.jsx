@@ -24,7 +24,7 @@ const Register = () => {
   const [formComplete, setFormComplete] = useState(false);
 
   // Récupération de l'URL de base depuis les variables d'environnement Vite
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
   useEffect(() => {
     const checkFormComplete = () => {
@@ -76,7 +76,7 @@ const Register = () => {
         phoneNumber: phone,
       });
       
-      const response = await Axios.post(`${API_BASE_URL}/api/register`, {
+      const response = await Axios.post(`${VITE_BACKEND_BASE_URL}/api/register`, {
         email: values.email,
         firstName: values.firstName,
         lastName: values.lastName,

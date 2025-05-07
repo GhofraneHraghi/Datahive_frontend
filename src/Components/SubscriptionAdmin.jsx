@@ -33,8 +33,8 @@ const SubscriptionAdmin = () => {
   const [form] = Form.useForm();
 
   // Récupération de l'URL de base depuis les variables d'environnement Vite
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-  const apiPlanUrl = `${API_BASE_URL}/api/plan`;
+  const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+  const apiPlanUrl = `${VITE_BACKEND_BASE_URL}/api/plan`;
 
   const handleSiderCollapse = (collapsed) => {
     setSiderCollapsed(collapsed);
