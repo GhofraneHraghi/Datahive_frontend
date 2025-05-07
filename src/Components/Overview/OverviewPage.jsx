@@ -45,7 +45,7 @@ const OverviewPage = () => {
         }
         
         // Récupérer les informations du tenant de l'utilisateur
-        const tenantResponse = await axios.get(`${API_BASE_URL}/client/tenant`, {
+        const tenantResponse = await axios.get(`${API_BASE_URL}/api/client/tenant`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
