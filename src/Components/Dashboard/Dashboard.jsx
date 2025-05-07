@@ -1,22 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Layout, Typography, Card, Steps, Button, Input, Upload, Form, Row, Col,
-  message, Divider, Badge, Space, Progress, Avatar, Alert, Modal, Drawer
+  Layout, Typography, Card, Steps, Button, Input, Form, Row, Col,
+  message, Space, Progress, Alert, Modal
 } from 'antd';
 import {
-  CopyOutlined, UploadOutlined, CloudOutlined, PlayCircleOutlined,
-  ApiOutlined, CheckCircleOutlined, SyncOutlined,
-  InfoCircleOutlined, ExclamationCircleOutlined, RocketOutlined,
-  ThunderboltOutlined, SettingOutlined, CloseOutlined
+  CopyOutlined,  CloudOutlined, PlayCircleOutlined,
+  ApiOutlined, CheckCircleOutlined, 
+  InfoCircleOutlined, RocketOutlined,
+  ThunderboltOutlined,  CloseOutlined
 } from '@ant-design/icons';
 import { motion } from 'framer-motion';
 import axios from 'axios';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import Guide from './Guide';
 import Navbar from './Navbar';
 import './Dashboard.css';
 
-const { Header, Content, Footer, Sider } = Layout;
+const {  Content, Footer, Sider } = Layout;
 const { Step } = Steps;
 const { Title, Text, Paragraph } = Typography;
 const BASE_URL = import.meta.env.BASE_URL;
@@ -132,7 +132,7 @@ const Dashboard = () => {
       setLoading(true);
 
       // Utilisation d'Axios au lieu de fetch pour plus de lisibilité
-      const response = await axios.post(`${BASE_URL}/api/process-bucket`, {
+      const response = await axios.post(`${API_BASE_URL}/api/process-bucket`, {
         bucketURI,
         sourceName: tenantName,
         userId

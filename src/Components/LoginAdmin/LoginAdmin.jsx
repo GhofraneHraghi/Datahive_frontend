@@ -19,7 +19,7 @@ const LoginAdmin = () => {
   const onFinish = async (values) => {
     setLoading(true);
     try {
-      const response = await Axios.post(`${API_BASE_URL}/loginAdmin`, values);
+      const response = await Axios.post(`${API_BASE_URL}/api/loginAdmin`, values);
       if (response.data.token) {
         localStorage.setItem("authToken", response.data.token);
         localStorage.setItem("employeeId", response.data.employeeId);
@@ -43,7 +43,7 @@ const LoginAdmin = () => {
     const user = await signInWithGoogle();
     if (user) {
       try {
-        const response = await Axios.post(`${API_BASE_URL}/google-login`, {
+        const response = await Axios.post(`${API_BASE_URL}/api/google-login`, {
           email: user.email,
         });
 

@@ -56,7 +56,7 @@ const OverviewPage = () => {
         }
         
         // Récupérer le statut de chaque rapport pour ce tenant
-        const reportsStatusResponse = await axios.get(`${API_BASE_URL}/reports/status`, {
+        const reportsStatusResponse = await axios.get(`${API_BASE_URL}/api/reports/status`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
