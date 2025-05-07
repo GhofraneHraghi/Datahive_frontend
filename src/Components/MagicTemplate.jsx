@@ -1,18 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Button, message } from 'antd';
+import { useNavigate } from 'react-router-dom';
 
 const MagicTemplate = () => {
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
   const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+
+  useEffect(() => {
+    // Vérification initiale du token
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+    }
+  }, [navigate]);
 
   const fetchLookerLink = async () => {
     setLoading(true);
     try {
-      // Récupération cohérente du token
       const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Veuillez vous connecter à nouveau');
+      const user = JSON.parse(localStorage.getItem('user'));
+      
+      if (!token || !user) {
+        throw new Error('Session expirée, veuillez vous reconnecter');
       }
 
       const response = await axios.get(
@@ -26,7 +37,7 @@ const MagicTemplate = () => {
       );
 
       if (!response.data?.url) {
-        throw new Error('Réponse inattendue du serveur');
+        throw new Error('Configuration Looker introuvable');
       }
 
       window.open(response.data.url, '_blank', 'noopener,noreferrer');
@@ -35,11 +46,11 @@ const MagicTemplate = () => {
       console.error('Erreur:', error);
       message.error(error.response?.data?.message || error.message);
       
-      // Redirection si token invalide
+      // Nettoyage et redirection si erreur 401
       if (error.response?.status === 401) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        window.location.href = '/login';
+        navigate('/login');
       }
     } finally {
       setLoading(false);
@@ -47,13 +58,17 @@ const MagicTemplate = () => {
   };
 
   return (
-    <Button 
-      type="primary" 
-      onClick={fetchLookerLink}
-      loading={loading}
-    >
-      Ouvrir Looker Studio
-    </Button>
+    <div className="looker-container">
+      <Button 
+        type="primary" 
+        size="large"
+        onClick={fetchLookerLink}
+        loading={loading}
+        style={{ margin: '20px' }}
+      >
+        Ouvrir Looker Studio
+      </Button>
+    </div>
   );
 };
 

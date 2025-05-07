@@ -38,6 +38,7 @@ const Login = () => {
     // Create unified user data object
     const userData = {
       id: user.id,
+      tenant_id: user.tenant_id, // Assurez-vous que ce champ existe
       role_id: user.role_id,
       email: user.email,
       permissions: user.permissions,
