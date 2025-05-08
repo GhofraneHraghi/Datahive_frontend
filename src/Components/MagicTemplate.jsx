@@ -4,7 +4,7 @@ import { Button, message, Steps } from 'antd';
 
 const { Step } = Steps;
 
-const MagicTemplate = () => {
+export const MagicTemplate = () => {
   const [loading, setLoading] = useState(false);
 
   const handleDownload = async () => {
