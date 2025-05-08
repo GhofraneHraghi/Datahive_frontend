@@ -7,7 +7,7 @@ const MagicTemplate = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
-
+  
   useEffect(() => {
     // Vérification initiale du token
     const token = localStorage.getItem('token');
@@ -15,7 +15,7 @@ const MagicTemplate = () => {
       navigate('/login');
     }
   }, [navigate]);
-
+  
   const fetchLookerLink = async () => {
     setLoading(true);
     try {
@@ -23,9 +23,11 @@ const MagicTemplate = () => {
       const user = JSON.parse(localStorage.getItem('user'));
       
       if (!token || !user) {
-        throw new Error('Session expirée, veuillez vous reconnecter');
+        message.error('Session expirée, veuillez vous reconnecter');
+        navigate('/login');
+        return;
       }
-
+      
       const response = await axios.get(
         `${VITE_BACKEND_BASE_URL}/api/looker-link`,
         {
@@ -35,16 +37,26 @@ const MagicTemplate = () => {
           }
         }
       );
-
+      
       if (!response.data?.url) {
         throw new Error('Configuration Looker introuvable');
       }
-
+      
+      // Ouvrir l'URL dans un nouvel onglet
       window.open(response.data.url, '_blank', 'noopener,noreferrer');
+      message.success('Looker Studio s\'ouvre dans un nouvel onglet');
       
     } catch (error) {
       console.error('Erreur:', error);
-      message.error(error.response?.data?.message || error.message);
+      
+      // Message d'erreur plus précis
+      if (error.response?.data?.error) {
+        message.error(`Erreur: ${error.response.data.error}`);
+      } else if (error.response?.data?.message) {
+        message.error(`Erreur: ${error.response.data.message}`);
+      } else {
+        message.error(error.message || 'Erreur de connexion à Looker Studio');
+      }
       
       // Nettoyage et redirection si erreur 401
       if (error.response?.status === 401) {
@@ -56,11 +68,11 @@ const MagicTemplate = () => {
       setLoading(false);
     }
   };
-
+  
   return (
     <div className="looker-container">
       <Button 
-        type="primary" 
+        type="primary"
         size="large"
         onClick={fetchLookerLink}
         loading={loading}
