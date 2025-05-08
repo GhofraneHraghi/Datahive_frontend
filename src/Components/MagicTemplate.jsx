@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 
 const MagicTemplate = () => {
   const [loading, setLoading] = useState(false);
+  const [debugInfo, setDebugInfo] = useState(null);
   const navigate = useNavigate();
   const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
   
@@ -18,7 +19,10 @@ const MagicTemplate = () => {
   
   const fetchLookerLink = async () => {
     setLoading(true);
+    setDebugInfo(null);
+    
     try {
+      console.log("Début de la requête pour le lien Looker");
       const token = localStorage.getItem('token');
       const user = JSON.parse(localStorage.getItem('user'));
       
@@ -27,6 +31,8 @@ const MagicTemplate = () => {
         navigate('/login');
         return;
       }
+      
+      console.log("Envoi de la requête au backend:", `${VITE_BACKEND_BASE_URL}/api/looker-link`);
       
       const response = await axios.get(
         `${VITE_BACKEND_BASE_URL}/api/looker-link`,
@@ -38,11 +44,23 @@ const MagicTemplate = () => {
         }
       );
       
+      console.log("Réponse reçue:", response.data);
+      
       if (!response.data?.url) {
         throw new Error('Configuration Looker introuvable');
       }
       
+      // Stockage de l'URL pour débogage
+      setDebugInfo(response.data.url);
+      
+      // Vérification de l'URL
+      if (response.data.url.includes('datasources/create')) {
+        console.warn("ATTENTION: L'URL utilise toujours l'ancien format!");
+        message.warning("L'URL générée utilise l'ancien format. Contactez l'administrateur.");
+      }
+      
       // Ouvrir l'URL dans un nouvel onglet
+      console.log("Ouverture de l'URL Looker:", response.data.url);
       window.open(response.data.url, '_blank', 'noopener,noreferrer');
       message.success('Looker Studio s\'ouvre dans un nouvel onglet');
       
@@ -57,6 +75,9 @@ const MagicTemplate = () => {
       } else {
         message.error(error.message || 'Erreur de connexion à Looker Studio');
       }
+      
+      // Ajout d'informations de débogage
+      setDebugInfo(error.response?.data || error.message);
       
       // Nettoyage et redirection si erreur 401
       if (error.response?.status === 401) {
@@ -80,6 +101,16 @@ const MagicTemplate = () => {
       >
         Ouvrir Looker Studio
       </Button>
+      
+      {/* Section de débogage */}
+      {debugInfo && (
+        <div style={{ margin: '20px', padding: '10px', border: '1px solid #ccc', borderRadius: '5px' }}>
+          <h4>Informations de débogage:</h4>
+          <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+            {typeof debugInfo === 'string' ? debugInfo : JSON.stringify(debugInfo, null, 2)}
+          </pre>
+        </div>
+      )}
     </div>
   );
 };
