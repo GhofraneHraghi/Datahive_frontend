@@ -1,75 +1,65 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
-import { Button, message } from 'antd';
-import { useNavigate } from 'react-router-dom';
+import { Button, message, Steps } from 'antd';
+
+const { Step } = Steps;
 
 const MagicTemplate = () => {
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-  const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
-  useEffect(() => {
-    // Vérification initiale du token
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/login');
-    }
-  }, [navigate]);
-
-  const fetchLookerLink = async () => {
+  const handleDownload = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const user = JSON.parse(localStorage.getItem('user'));
+      if (!token) throw new Error('Veuillez vous reconnecter');
+
+      const response = await axios.get('/api/looker-config', {
+        responseType: 'blob',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      // Téléchargement automatique
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'config-looker.json');
+      document.body.appendChild(link);
+      link.click();
       
-      if (!token || !user) {
-        throw new Error('Session expirée, veuillez vous reconnecter');
-      }
-
-      const response = await axios.get(
-        `${VITE_BACKEND_BASE_URL}/api/looker-link`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-
-      if (!response.data?.url) {
-        throw new Error('Configuration Looker introuvable');
-      }
-
-      window.open(response.data.url, '_blank', 'noopener,noreferrer');
-      
+      message.success('Configuration téléchargée !');
     } catch (error) {
-      console.error('Erreur:', error);
-      message.error(error.response?.data?.message || error.message);
-      
-      // Nettoyage et redirection si erreur 401
-      if (error.response?.status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        navigate('/login');
-      }
+      message.error(error.response?.data?.error || error.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="looker-container">
+    <div style={{ maxWidth: 800, margin: '0 auto' }}>
+      <Steps current={0} style={{ marginBottom: 30 }}>
+        <Step title="Télécharger" description="Obtenir la configuration" />
+        <Step title="Importer" description="Dans Looker Studio" />
+        <Step title="Créer" description="Vos rapports personnalisés" />
+      </Steps>
+
       <Button 
         type="primary" 
         size="large"
-        onClick={fetchLookerLink}
+        onClick={handleDownload}
         loading={loading}
-        style={{ margin: '20px' }}
       >
-        Ouvrir Looker Studio
+        Télécharger la configuration
       </Button>
+
+      <div style={{ marginTop: 20 }}>
+        <a 
+          href="https://lookerstudio.google.com" 
+          target="_blank" 
+          rel="noopener noreferrer"
+        >
+          Ouvrir Looker Studio dans un nouvel onglet
+        </a>
+      </div>
     </div>
   );
 };
-
-export default MagicTemplate;
