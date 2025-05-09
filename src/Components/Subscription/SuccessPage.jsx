@@ -20,7 +20,7 @@ const SuccessPage = () => {
   const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
   
   useEffect(() => {
-    const authToken = localStorage.getItem('authToken');
+    const authToken = localStorage.getItem('token');
     
     const verifyPayment = async () => {
       if (!sessionId) {

@@ -71,7 +71,7 @@ const Profile = () => {
   // Fetch user data on component mount
   useEffect(() => {
     const fetchUserData = async () => {
-      const token = localStorage.getItem("authToken");
+      const token = localStorage.getItem("token");
       const userId = JSON.parse(localStorage.getItem('user')).id;
 
       if (!token || !userId) {
@@ -119,7 +119,7 @@ const Profile = () => {
   // Handle company update
   const handleCompanyUpdate = async (values) => {
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('token');
       const user = JSON.parse(localStorage.getItem('user'));
   
       if (!token || !user) {
@@ -163,7 +163,7 @@ const Profile = () => {
   // Handle profile update
  // Handle profile update - Version corrigée
 const handleProfileUpdate = async (values) => {
-  const token = localStorage.getItem("authToken");
+  const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem('user'));
   const userId = user?.id;
 
@@ -223,7 +223,7 @@ const handleProfileUpdate = async (values) => {
 
   // Handle password update
   const handlePasswordUpdate = async (values) => {
-    const token = localStorage.getItem("authToken");
+    const token = localStorage.getItem("token");
     const userId = localStorage.getItem("userId");
 
     setLoading(true);
@@ -249,7 +249,7 @@ const handleProfileUpdate = async (values) => {
 
   // Handle logout
   const handleLogout = () => {
-    localStorage.removeItem("authToken");
+    localStorage.removeItem("token");
     localStorage.removeItem("userId");
     message.success("Vous avez été déconnecté");
     navigate("/login");

@@ -21,7 +21,7 @@ const LoginAdmin = () => {
     try {
       const response = await Axios.post(`${VITE_BACKEND_BASE_URL}/api/loginAdmin`, values);
       if (response.data.token) {
-        localStorage.setItem("authToken", response.data.token);
+        localStorage.setItem("token", response.data.token);
         localStorage.setItem("employeeId", response.data.employeeId);
         sessionStorage.setItem("currentemployee", JSON.stringify({
           id: response.data.employeeId,
@@ -48,7 +48,7 @@ const LoginAdmin = () => {
         });
 
         if (response.data.token) {
-          localStorage.setItem("authToken", response.data.token);
+          localStorage.setItem("token", response.data.token);
           localStorage.setItem("employeeId", response.data.employeeId);
           sessionStorage.setItem("currentemployee", JSON.stringify({
             id: response.data.employeeId,

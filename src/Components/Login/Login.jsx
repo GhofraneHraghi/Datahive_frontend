@@ -49,7 +49,7 @@ const Login = () => {
     // Store user data and token in localStorage
     localStorage.setItem("user", JSON.stringify(userData));
     localStorage.setItem("token", token);
-    
+    alert("User data processed and stored successfully!");
     // Navigate to dashboard
     navigate("/dashboard");
   };
@@ -61,7 +61,7 @@ const Login = () => {
         email: values.email,
         password: values.password,
       });
-  
+      console.log("Login response:", response.data);
       if (response.data.token) {
         await processUserData(response.data);
         antMessage.success("Connexion réussie !");

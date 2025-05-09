@@ -46,7 +46,7 @@ const Dashboard = () => {
   useEffect(() => {
     // Vérifier si l'utilisateur est connecté
     const user = JSON.parse(localStorage.getItem('user'));
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem('token');
     
     if (!token || !user) {
       navigate('/login');
@@ -75,7 +75,7 @@ const Dashboard = () => {
   }, [navigate]);
 
   const checkSubscription = async () => {
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user'));
     
     if (!token || !user) {

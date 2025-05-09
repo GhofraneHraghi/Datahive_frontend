@@ -21,7 +21,7 @@ const SubscriptionPlans = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const authToken = localStorage.getItem("authToken");
+        const authToken = localStorage.getItem("token");
         
         const [plansResponse, subscriptionResponse] = await Promise.all([
           axios.get(`${VITE_BACKEND_BASE_URL}/api/plans`, {
@@ -55,7 +55,7 @@ const SubscriptionPlans = () => {
     
     setRedirecting(true);
     try {
-      const authToken = localStorage.getItem("authToken");
+      const authToken = localStorage.getItem("token");
       
       const response = await axios.post(
         `${VITE_BACKEND_BASE_URL}/api/create-checkout-session`,

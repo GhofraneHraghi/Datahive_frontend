@@ -25,7 +25,7 @@ const ManageMember = () => {
   };
 
   const fetchUserDataAndMembers = async () => {
-    const token = localStorage.getItem("authToken");
+    const token = localStorage.getItem("token");
     if (!token) {
       notification.error({ message: "Token non trouvé." });
       setLoading(false);
@@ -70,7 +70,7 @@ const ManageMember = () => {
     }
 
     try {
-      const token = localStorage.getItem("authToken");
+      const token = localStorage.getItem("token");
       const response = await axios.post(
         `${VITE_BACKEND_BASE_URL}/api/add-members`,
         { email: newMemberEmail },
@@ -92,7 +92,7 @@ const ManageMember = () => {
 
   const handleDeleteMember = async (memberId) => {
     try {
-      const token = localStorage.getItem("authToken");
+      const token = localStorage.getItem("token");
       await axios.delete(`${VITE_BACKEND_BASE_URL}/api/delete_members/${memberId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });

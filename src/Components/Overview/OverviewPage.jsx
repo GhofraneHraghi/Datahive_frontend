@@ -38,7 +38,7 @@ const OverviewPage = () => {
         
         // Récupérer les informations utilisateur du localStorage
         const user = JSON.parse(localStorage.getItem("user"));
-        const token = localStorage.getItem("authToken");
+        const token = localStorage.getItem("token");
         
         if (!user || !token) {
           throw new Error("Utilisateur non connecté");
