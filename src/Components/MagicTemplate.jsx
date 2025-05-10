@@ -1,6 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Button, message, Layout, Card, Steps, Typography, Divider, Alert, Collapse, Select, Spin } from 'antd';
+import { 
+  Button, 
+  message, 
+  Layout, 
+  Card, 
+  Steps, 
+  Typography, 
+  Alert, 
+  Collapse, 
+  Select, 
+  Spin,
+  Divider
+} from 'antd';
+import { CopyOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './Dashboard/Navbar';
 
@@ -20,6 +33,9 @@ const MagicTemplate = () => {
   const [loadingTemplates, setLoadingTemplates] = useState(false);
   const navigate = useNavigate();
   const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+
+  // Ajout d'un état pour savoir si le template est vide
+  const [isEmptyTemplate, setIsEmptyTemplate] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -46,7 +62,9 @@ const MagicTemplate = () => {
       
       if (response.data?.templates && response.data.templates.length > 0) {
         setTemplates(response.data.templates);
-        setSelectedTemplate(response.data.templates[0].id); // Select first template by default
+        setSelectedTemplate(response.data.templates[0].id);
+        // Vérifier si le premier template est vide
+        checkIfEmptyTemplate(response.data.templates[0].template_data);
       }
     } catch (error) {
       console.error('Erreur de chargement des templates:', error);
@@ -62,10 +80,18 @@ const MagicTemplate = () => {
     }
   };
 
+  const checkIfEmptyTemplate = (templateData) => {
+    try {
+      const data = JSON.parse(templateData);
+      setIsEmptyTemplate(Object.keys(data).length === 0);
+    } catch {
+      setIsEmptyTemplate(false);
+    }
+  };
+
   const fetchLookerLink = async () => {
     setLoading(true);
     setDebugInfo(null);
-    setCurrentStep(1); // Move to next step after click
     
     try {
       const token = localStorage.getItem('token');
@@ -91,13 +117,13 @@ const MagicTemplate = () => {
       );
       
       if (!response.data?.url) {
-        throw new Error('Configuration Looker introuvable');
+        throw new Error('URL Looker Studio introuvable');
       }
       
       setDebugInfo(response.data.url);
-      
       window.open(response.data.url, '_blank', 'noopener,noreferrer');
       message.success('Votre rapport Looker Studio s\'ouvre dans un nouvel onglet');
+      setCurrentStep(1);
       
     } catch (error) {
       console.error('Erreur:', error);
@@ -122,6 +148,19 @@ const MagicTemplate = () => {
     }
   };
 
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    message.success('Copié dans le presse-papier');
+  };
+
+  const handleTemplateChange = (value) => {
+    setSelectedTemplate(value);
+    const selected = templates.find(t => t.id === value);
+    if (selected) {
+      checkIfEmptyTemplate(selected.template_data);
+    }
+  };
+
   const steps = [
     {
       title: 'Choisir un template',
@@ -142,7 +181,7 @@ const MagicTemplate = () => {
                 style={{ width: '100%', marginTop: 16, marginBottom: 24, maxWidth: 500 }}
                 placeholder="Sélectionnez un template"
                 value={selectedTemplate}
-                onChange={(value) => setSelectedTemplate(value)}
+                onChange={handleTemplateChange}
                 disabled={templates.length === 0}
                 size="large"
               >
@@ -164,24 +203,26 @@ const MagicTemplate = () => {
               />
             )}
             
-            <Button 
-              type="primary"
-              size="large"
-              onClick={fetchLookerLink}
-              loading={loading}
-              disabled={templates.length === 0 || !selectedTemplate}
-              style={{ marginTop: 16 }}
-            >
-              Générer mon rapport
-            </Button>
+            <div style={{ marginTop: 24, textAlign: 'center' }}>
+              <Button 
+                type="primary"
+                size="large"
+                onClick={fetchLookerLink}
+                loading={loading}
+                disabled={templates.length === 0 || !selectedTemplate}
+              >
+                Générer mon rapport
+              </Button>
+              
+              <Button 
+                style={{ marginLeft: 16 }}
+                onClick={() => setCurrentStep(1)}
+              >
+                Passer à la configuration
+              </Button>
+            </div>
           </Card>
-          
-          <Alert
-            message="Information"
-            description="Le rapport sera pré-configuré avec votre base de données. Aucune configuration manuelle n'est nécessaire."
-            type="info"
-            showIcon
-          />
+        
         </div>
       ),
     },
@@ -189,25 +230,134 @@ const MagicTemplate = () => {
       title: 'Personnaliser votre rapport',
       content: (
         <Card style={{ marginTop: 20 }}>
-          <Title level={4}>Votre rapport est prêt !</Title>
-          <Paragraph>
-            Votre rapport Looker Studio sest ouvert dans un nouvel onglet avec :
-          </Paragraph>
+          {isEmptyTemplate ? (
+            <>
+              <Title level={4}>Création d'un nouveau rapport</Title>
+              <Paragraph>
+                Vous avez choisi de créer un rapport vide. Voici comment procéder :
+              </Paragraph>
+              
+              <ol>
+                <li>Dans Looker Studio, cliquez sur <Text strong>"Créer"</Text> puis <Text strong>"Rapport"</Text></li>
+                <li>Sélectionnez <Text strong>"Nouvelle source de données"</Text></li>
+                <li>Choisissez le connecteur MySQL</li>
+                <li>Remplissez les informations de connexion ci-dessous</li>
+                <li>Sélectionnez les tables et champs à utiliser</li>
+                <li>Créez vos visualisations (tableaux, graphiques, etc.)</li>
+              </ol>
+              
+              <Divider orientation="left">Configuration requise</Divider>
+            </>
+          ) : (
+            <>
+              <Title level={4}>Votre rapport est prêt !</Title>
+              <Paragraph>
+                Votre rapport Looker Studio s'est ouvert dans un nouvel onglet avec :
+              </Paragraph>
+              
+              <ul style={{ marginBottom: 20 }}>
+
+                <li>Template préconfiguré selon votre choix</li>
+                <li>Tables et champs déjà sélectionnés</li>
+              </ul>
+              
+              <Title level={4}>Modifications possibles :</Title>
+              <ol>
+                <li>Ajoutez ou modifiez les visualisations selon vos besoins</li>
+                <li>Personnalisez les filtres et les plages de dates</li>
+                <li>Ajustez la mise en page et les couleurs</li>
+                <li>Cliquez sur <Text strong>"Enregistrer"</Text> dans le menu supérieur pour sauvegarder vos modifications</li>
+              </ol>
+            </>
+          )}
           
-          <ul style={{ marginBottom: 20 }}>
-            <li>Connexion automatique à votre base de données</li>
-            <li>Template préconfiguré selon votre choix</li>
-            <li>Tables et champs déjà sélectionnés</li>
-          </ul>
-          
-          <Title level={4}>Modifications possibles :</Title>
-          <ol>
-            <li>Ajoutez ou modifiez les visualisations selon vos besoins</li>
-            <li>Personnalisez les filtres et les plages de dates</li>
-            <li>Ajustez la mise en page et les couleurs</li>
-            <li>Cliquez sur <Text strong>"Enregistrer"</Text> dans le menu supérieur pour sauvegarder vos modifications</li>
-          </ol>
-          
+          <Collapse style={{ marginTop: 20 }}>
+            <Panel header="Configuration de connexion MySQL (Copier ces informations)" key="db-config">
+              <Alert
+                message="Informations sensibles"
+                description="Ces identifiants sont personnels et confidentiels"
+                type="warning"
+                showIcon
+                style={{ marginBottom: 20 }}
+              />
+              
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 16 }}>
+                <tbody>
+                  <tr>
+                    <td style={{ padding: '8px', border: '1px solid #d9d9d9', width: '150px' }}>
+                      <Text strong>Hôte MySQL:</Text>
+                    </td>
+                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
+                      51.38.187.245
+                      <Button 
+                        type="text" 
+                        icon={<CopyOutlined />} 
+                        onClick={() => copyToClipboard('51.38.187.245')}
+                        style={{ marginLeft: 8 }}
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
+                      <Text strong>Port:</Text>
+                    </td>
+                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
+                      3306
+                      <Button 
+                        type="text" 
+                        icon={<CopyOutlined />} 
+                        onClick={() => copyToClipboard('3306')}
+                        style={{ marginLeft: 8 }}
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
+                      <Text strong>Utilisateur:</Text>
+                    </td>
+                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
+                      looker_user
+                      <Button 
+                        type="text" 
+                        icon={<CopyOutlined />} 
+                        onClick={() => copyToClipboard('looker_user')}
+                        style={{ marginLeft: 8 }}
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
+                      <Text strong>Mot de passe:</Text>
+                    </td>
+                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
+                      lokaszsh98@Datahive_looker
+                      <Button 
+                        type="text" 
+                        icon={<CopyOutlined />} 
+                        onClick={() => copyToClipboard('lokaszsh98@Datahive_looker')}
+                        style={{ marginLeft: 8 }}
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              
+              <Alert
+                message="Instructions"
+                description={
+                  <>
+                    <p>1. Dans Looker Studio, sélectionnez "Créer une source de données"</p>
+                    <p>2. Choisissez le connecteur MySQL</p>
+                    <p>3. Remplissez les champs avec les informations ci-dessus</p>
+                    <p>4. Le nom de votre base sera automatiquement détecté</p>
+                  </>
+                }
+                type="info"
+                showIcon
+              />
+            </Panel>
+          </Collapse>
+
           <Alert
             message="Astuce"
             description="Pour partager votre rapport, cliquez sur 'Partager' dans le menu supérieur de Looker Studio."
@@ -215,6 +365,21 @@ const MagicTemplate = () => {
             showIcon
             style={{ marginTop: 20 }}
           />
+
+          <div style={{ marginTop: 24, textAlign: 'center' }}>
+            <Button 
+              style={{ marginRight: 8 }} 
+              onClick={() => setCurrentStep(0)}
+            >
+              Retour
+            </Button>
+            <Button 
+              type="primary"
+              onClick={() => setCurrentStep(2)}
+            >
+              Continuer vers la gestion
+            </Button>
+          </div>
         </Card>
       ),
     },
@@ -240,6 +405,24 @@ const MagicTemplate = () => {
             showIcon
             style={{ marginTop: 20 }}
           />
+
+          <div style={{ marginTop: 20, textAlign: 'center' }}>
+            <Button 
+              style={{ marginRight: 8 }}
+              onClick={() => setCurrentStep(1)}
+            >
+              Retour à la personnalisation
+            </Button>
+            <Button 
+              type="primary"
+              onClick={() => {
+                setCurrentStep(0);
+                setDebugInfo(null);
+              }}
+            >
+              Créer un nouveau rapport
+            </Button>
+          </div>
         </Card>
       ),
     },
@@ -270,34 +453,21 @@ const MagicTemplate = () => {
             
             <div className="steps-content">{steps[currentStep].content}</div>
             
-            <div style={{ marginTop: 24, textAlign: 'center' }}>
-              {currentStep > 0 && (
-                <Button style={{ marginRight: 8 }} onClick={() => setCurrentStep(currentStep - 1)}>
-                  Précédent
-                </Button>
-              )}
-              {currentStep < steps.length - 1 && (
-                <Button type="primary" onClick={() => setCurrentStep(currentStep + 1)}>
-                  Suivant
-                </Button>
-              )}
-            </div>
-            
-            <Collapse style={{ marginTop: 40 }}>
-              <Panel header="Informations techniques (pour support)" key="1">
-                {debugInfo && (
+            {debugInfo && (
+              <Collapse style={{ marginTop: 40 }}>
+                <Panel header="Informations techniques (pour support)" key="1">
                   <div>
                     <h4>URL générée :</h4>
                     <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
                       {typeof debugInfo === 'string' ? debugInfo : JSON.stringify(debugInfo, null, 2)}
                     </pre>
                   </div>
-                )}
-                <Paragraph>
-                  En cas de problème, fournissez ces informations à léquipe technique.
-                </Paragraph>
-              </Panel>
-            </Collapse>
+                  <Paragraph>
+                    En cas de problème, fournissez ces informations à léquipe technique.
+                  </Paragraph>
+                </Panel>
+              </Collapse>
+            )}
           </div>
         </Content>
       </Layout>
