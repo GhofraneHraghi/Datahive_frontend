@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Form, Input, Button, Card, Typography, Row, Col, message as antMessage, Divider } from "antd";
+import { Form, Input, Button, Card, Typography, Divider, Modal, message } from "antd";
 import { MailOutlined, LockOutlined, GoogleOutlined } from "@ant-design/icons";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -13,10 +13,13 @@ const Login = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [resetModalVisible, setResetModalVisible] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
   const navigate = useNavigate();
   
-  // Récupération de l'URL de base depuis les variables d'environnement Vite
   const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
+
   const fetchSubscriptionInfo = async (userId, token) => {
     try {
       const response = await axios.get(`${VITE_BACKEND_BASE_URL}/api/user-subscription/${userId}`, {
@@ -31,14 +34,11 @@ const Login = () => {
 
   const processUserData = async (responseData) => {
     const { user, token } = responseData;
-    
-    // Always fetch subscription info for all users
     const subscriptionInfo = await fetchSubscriptionInfo(user.id, token);
     
-    // Create unified user data object
     const userData = {
       id: user.id,
-      tenant_id: user.tenant_id, // Assurez-vous que ce champ existe
+      tenant_id: user.tenant_id,
       role_id: user.role_id,
       email: user.email,
       permissions: user.permissions,
@@ -46,10 +46,8 @@ const Login = () => {
       has_active_subscription: subscriptionInfo?.status === 'active'
     };
 
-    // Store user data and token in localStorage
     localStorage.setItem("user", JSON.stringify(userData));
     localStorage.setItem("token", token);
-    // Navigate to dashboard
     navigate("/dashboard");
   };
 
@@ -60,13 +58,12 @@ const Login = () => {
         email: values.email,
         password: values.password,
       });
-      console.log("Login response:", response.data);
       if (response.data.token) {
         await processUserData(response.data);
-        antMessage.success("Connexion réussie !");
+        message.success("Connexion réussie !");
       }
     } catch (error) {
-      antMessage.error(error.response?.data?.message || "Échec de la connexion");
+      message.error(error.response?.data?.message || "Échec de la connexion");
     } finally {
       setLoading(false);
     }
@@ -82,103 +79,160 @@ const Login = () => {
   
       if (response.data.token) {
         await processUserData(response.data);
-        antMessage.success("Connexion Google réussie !");
+        message.success("Connexion Google réussie !");
       }
     } catch (error) {
-      antMessage.error(error.response?.data?.message || "Échec Google");
+      message.error(error.response?.data?.message || "Échec Google");
     } finally {
       setGoogleLoading(false);
+    }
+  };
+
+  const handleResetPasswordRequest = async () => {
+    if (!resetEmail) {
+      message.error("Veuillez entrer votre adresse e-mail");
+      return;
+    }
+
+    setResetLoading(true);
+    try {
+      const response = await axios.post(`${VITE_BACKEND_BASE_URL}/api/reset-password-request`, {
+        email: resetEmail
+      });
+      
+      message.success(response.data.message || "Un email de réinitialisation a été envoyé");
+      setResetModalVisible(false);
+    } catch (error) {
+      message.error(error.response?.data?.message || "Erreur lors de la demande de réinitialisation");
+    } finally {
+      setResetLoading(false);
     }
   };
 
   return (
     <div className="login-container">
       <div className="login-background"></div>
-      <Card className="login-card">
-        <div className="login-header">
-          <Title level={2} className="login-title">Sign In to Your Account</Title>
-          <Text className="login-subtitle">Welcome back! Please enter your details.</Text>
-        </div>
-        <Form
-          form={form}
-          onFinish={handleLogin}
-          layout="vertical"
-          className="login-form"
-        >
-          <Form.Item
-            name="email"
-            label="Email"
-            rules={[
-              {
-                required: true,
-                message: "Please enter your email!",
-              },
-              {
-                type: "email",
-                message: "Invalid email address!",
-              }
-            ]}
+      <div className="login-content">
+        <Card className="login-card">
+          <div className="login-header">
+            <Title level={2} className="login-title">Welcome Back</Title>
+            <Text className="login-subtitle">Sign in to continue to your account</Text>
+          </div>
+          
+          <Form
+            form={form}
+            onFinish={handleLogin}
+            layout="vertical"
+            className="login-form"
           >
-            <Input
-              prefix={<MailOutlined className="input-icon" />}
-              placeholder="Enter your email"
-              size="large"
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="password"
-            label="Password"
-            rules={[
-              {
-                required: true,
-                message: "Please enter your password!",
-              }
-            ]}
-          >
-            <Input.Password
-              prefix={<LockOutlined className="input-icon" />}
-              placeholder="Enter your password"
-              size="large"
-            />
-          </Form.Item>
-
-          <Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={loading}
-              block
-              size="large"
-              className="submit-btn"
+            <Form.Item
+              name="email"
+              label="Email Address"
+              rules={[
+                { required: true, message: "Please enter your email!" },
+                { type: "email", message: "Invalid email address!" }
+              ]}
             >
-              Sign In
-            </Button>
-          </Form.Item>
-        </Form>
+              <Input
+                prefix={<MailOutlined className="input-icon" />}
+                placeholder="Enter your email"
+                size="large"
+              />
+            </Form.Item>
 
-        <Divider plain>Or</Divider>
+            <Form.Item
+              name="password"
+              label="Password"
+              rules={[
+                { required: true, message: "Please enter your password!" }
+              ]}
+            >
+              <Input.Password
+                prefix={<LockOutlined className="input-icon" />}
+                placeholder="Enter your password"
+                size="large"
+              />
+            </Form.Item>
 
-        <Button
-          icon={<GoogleOutlined />}
-          onClick={handleGoogleLogin}
-          loading={googleLoading}
-          block
-          size="large"
-          className="google-btn"
-        >
-          Sign in with Google
-        </Button>
+            <div className="forgot-password-container">
+              <Button 
+                type="link" 
+                onClick={() => setResetModalVisible(true)}
+                className="forgot-password-btn"
+              >
+                Forgot password?
+              </Button>
+            </div>
 
-        <div className="login-footer">
-          <Text>
-            Dont have an account?{" "}
-            <Link to="/register" className="register-link">
-              Register
-            </Link>
-          </Text>
+            <Form.Item>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={loading}
+                block
+                size="large"
+                className="submit-btn"
+              >
+                Sign In
+              </Button>
+            </Form.Item>
+          </Form>
+
+          <Divider className="divider">or continue with</Divider>
+
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <Button
+            icon={<GoogleOutlined />}
+            onClick={handleGoogleLogin}
+            loading={googleLoading}
+            size="large"
+            className="google-btn"
+          >
+            Sign in with Google
+          </Button>
         </div>
-      </Card>
+
+          <div className="login-footer">
+            <Text className="footer-text">
+              Dont have an account?{" "}
+              <Link to="/register" className="register-link">
+                Sign up
+              </Link>
+            </Text>
+          </div>
+        </Card>
+      </div>
+
+      {/* Reset Password Modal (identique) */}
+      <Modal
+        title="Reset Password"
+        open={resetModalVisible}
+        onCancel={() => setResetModalVisible(false)}
+        footer={[
+          <Button key="back" onClick={() => setResetModalVisible(false)}>
+            Cancel
+          </Button>,
+          <Button 
+            key="submit" 
+            type="primary" 
+            loading={resetLoading}
+            onClick={handleResetPasswordRequest}
+          >
+            Send Reset Link
+          </Button>,
+        ]}
+      >
+        <p>Enter your email address to receive a password reset link</p>
+        <Input
+          prefix={<MailOutlined />}
+          placeholder="Your email address"
+          value={resetEmail}
+          onChange={(e) => setResetEmail(e.target.value)}
+          size="large"
+          style={{ marginTop: 16 }}
+          onPressEnter={handleResetPasswordRequest}
+        />
+      </Modal>
     </div>
   );
 };

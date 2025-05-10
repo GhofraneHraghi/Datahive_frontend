@@ -1,47 +1,142 @@
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 2rem;
+}
 
-    .loginPage {
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      position: relative;
-      background: rgba(0, 0, 0, 0.5);
-    }
-    
-    .loginPage::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: url("../../assets/image1.jpg") center/cover;
-      filter: blur(8px);
-      z-index: -1;
-    }
-    
-    .loginCard {
-      background: rgba(255, 255, 255, 0.455);
-      backdrop-filter: blur(4px);
-      border-radius: 12px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-      max-width: 400px;
-      width: 90%;
-      padding: 24px;
-    }
-    
-    .loginTitle {
-      color: #1890ff;
-      text-align: center;
-      margin-bottom: 30px !important;
-    }
-    
-    /* Améliorations optionnelles pour le formulaire */
-    .ant-form-item-label label {
-      font-weight: 500;
-    }
-    
-    .ant-input-affix-wrapper {
-      border-radius: 6px;
-    }
-    
+.login-background {
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  background: url('/background-login.svg') no-repeat center center/cover;
+  opacity: 0.05;
+  z-index: 0;
+}
+
+.login-content {
+  width: 100%;
+  max-width: 500px;
+  z-index: 1;
+}
+
+.login-card {
+  width: 100%;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  padding: 40px;
+  background: #fff;
+  border: none;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.login-title {
+  margin-bottom: 8px;
+  color: #2d3748;
+  font-weight: 700;
+}
+
+.login-subtitle {
+  color: #718096;
+  font-size: 1rem;
+}
+
+.login-form .ant-form-item {
+  margin-bottom: 20px;
+}
+
+.login-form .ant-form-item-label > label {
+  color: #4a5568;
+  font-weight: 500;
+}
+
+.input-icon {
+  color: #a0aec0;
+}
+
+.submit-btn {
+  height: 48px;
+  font-weight: 600;
+  background-color: #1779f8;
+  border: none;
+  margin-top: 8px;
+}
+
+.submit-btn:hover {
+  background-color: #0757eb !important;
+}
+
+.google-btn {
+  height: 48px;
+  font-weight: 600;
+  color: #4a5568;
+  border-color: #e2e8f0;
+  
+}
+
+.google-btn:hover {
+  border-color: #cbd5e0;
+  color: #4f46e5;
+}
+
+.divider.ant-divider {
+  color: #a0aec0;
+  border-color: #edf2f7;
+  margin: 24px 0;
+}
+
+.forgot-password-container {
+  text-align: right;
+  margin-bottom: 20px;
+}
+
+.forgot-password-btn {
+  color: #718096;
+  padding: 0;
+  font-size: 0.875rem;
+}
+
+.forgot-password-btn:hover {
+  color: #4f46e5;
+}
+
+.login-footer {
+  text-align: center;
+  margin-top: 24px;
+}
+
+.footer-text {
+  color: #718096;
+}
+
+.register-link {
+  color: #4f46e5;
+  font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .login-container {
+    padding: 1rem;
+  }
+  
+  .login-card {
+    padding: 32px 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-card {
+    padding: 24px 16px;
+  }
+  
+  .login-title {
+    font-size: 1.5rem;
+  }
+}

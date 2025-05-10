@@ -18,6 +18,7 @@ import ManageMember from "./Components/ManageMember/ManageMember.jsx";
 import SuccessPage from './Components/Subscription/SuccessPage.jsx';
 import UserList from "./Components/UserList/UserList";
 import AdminDashboard from './Components/Dashboard/AdminDashboard';
+import SeetingsPage from './Components/Seetings/SeetingsPage';
 import LoginAdmin from './Components/LoginAdmin/LoginAdmin';
 import Page from './Components/page';
 import MagicTemplate from './Components/MagicTemplate';
@@ -45,6 +46,7 @@ function App() {
         <Route path="/users" element={<UserList/>}/>
         <Route path="/loginAdmin" element={<LoginAdmin />} />
         <Route path="/dashboard-admin" element={<AdminDashboard/>}/>
+        <Route path="/seetings" element={<SeetingsPage/>}/>
         <Route path="/" element={<Page/>}/>
         <Route path="/magic-template" element={<MagicTemplate />} />
 

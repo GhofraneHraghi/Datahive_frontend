@@ -90,7 +90,7 @@ const NavbarAdmin = ({ title = "Data Hive", onCollapse, onPageChange }) => {
       
       <Menu.Item 
         key="/subscription-admin"
-        icon={<UserOutlined />}
+        icon={<CreditCardOutlined />}
         onClick={() => handleMenuClick('/subscription-admin', 'subscription-admin')}
         className={location.pathname === '/subscription-admin' ? 'menu-item-selected' : ''}
         style={getItemStyle('/subscription-admin')}
@@ -109,13 +109,13 @@ const NavbarAdmin = ({ title = "Data Hive", onCollapse, onPageChange }) => {
       </Menu.Item>
       
       <Menu.Item 
-        key="/magic-template"
+        key="/seetings"
         icon={<AppstoreOutlined />}
-        onClick={() => handleMenuClick('/magic-template', 'magic-template')}
-        className={location.pathname === '/magic-template' ? 'menu-item-selected' : ''}
-        style={getItemStyle('/magic-template')}
+        onClick={() => handleMenuClick('/seetings', 'seetings')}
+        className={location.pathname === '/seetings' ? 'menu-item-selected' : ''}
+        style={getItemStyle('/seetings')}
       >
-        <Link to="/magic-template" className="nav-link">Paramètres</Link>
+        <Link to="/seetings" className="nav-link">Paramètres</Link>
       </Menu.Item>
     </Menu>
   );

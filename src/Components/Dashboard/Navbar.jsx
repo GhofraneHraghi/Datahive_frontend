@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Menu, Button, Typography, Drawer, Divider, Space } from 'antd';
+import { Layout, Menu, Button, Typography, Drawer, Divider, Space, Popconfirm } from 'antd';
 import { 
   MenuUnfoldOutlined, 
   MenuFoldOutlined,
@@ -9,9 +9,10 @@ import {
   CreditCardOutlined,
   MenuOutlined,
   LeftOutlined,
-  DashboardOutlined
+  DashboardOutlined,
+  LogoutOutlined
 } from '@ant-design/icons';
-import { Link, useLocation } from 'react-router-dom'; // Import useLocation pour obtenir le chemin actuel
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './Navbar.css';
 
 const { Sider } = Layout;
@@ -23,8 +24,15 @@ const Navbar = ({ title = "Data Hive", onCollapse, onPageChange }) => {
   const [isMobile, setIsMobile] = useState(false);
   const [permissions, setPermissions] = useState([]);
   const [roleId, setRoleId] = useState(null);
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const location = useLocation(); // Utilisation de useLocation pour obtenir le chemin actuel
+  const handleSignOut = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    navigate('/login');
+    window.location.reload();
+  };
 
   const handleMenuClick = (key, page) => {
     if (onPageChange) onPageChange(page);
@@ -32,7 +40,6 @@ const Navbar = ({ title = "Data Hive", onCollapse, onPageChange }) => {
   };
 
   useEffect(() => {
-    // Function to load user data including permissions
     const loadUserData = () => {
       const userData = localStorage.getItem('user');
       if (userData) {
@@ -41,8 +48,6 @@ const Navbar = ({ title = "Data Hive", onCollapse, onPageChange }) => {
           if (parsedUserData.permissions) {
             setPermissions(parsedUserData.permissions);
             setRoleId(parsedUserData.role_id);
-            console.log('Permissions loaded:', parsedUserData.permissions);
-            console.log('Role ID:', parsedUserData.role_id);
           }
         } catch (error) {
           console.error('Error parsing user data:', error);
@@ -52,21 +57,14 @@ const Navbar = ({ title = "Data Hive", onCollapse, onPageChange }) => {
       }
     };
 
-    // Load user data on mount
     loadUserData();
-
-    // Listen for storage changes
     window.addEventListener('storage', loadUserData);
     
-    // Cleanup
     return () => window.removeEventListener('storage', loadUserData);
   }, []);
 
-  // Utility function to check permissions
   const hasPermission = (perm) => permissions.includes(perm);
-  
-  // Function to check if user is an owner (role_id = 1)
-  const isOwner = () => roleId === 1;
+  //const isOwner = () => roleId === 1;
 
   useEffect(() => {
     const handleResize = () => {
@@ -108,7 +106,7 @@ const Navbar = ({ title = "Data Hive", onCollapse, onPageChange }) => {
     <Menu 
       theme="dark" 
       mode="inline" 
-      selectedKeys={[location.pathname]} // Utilisation de location.pathname pour la surbrillance
+      selectedKeys={[location.pathname]}
       className="navbar-menu"
       style={{ 
         display: 'flex',
@@ -117,19 +115,19 @@ const Navbar = ({ title = "Data Hive", onCollapse, onPageChange }) => {
         padding: '16px 0'
       }}
     >
-    <Menu.Item 
-    key="/dashboard" // Utilisation du chemin comme clé
-    icon={<DashboardOutlined />}
-    onClick={() => handleMenuClick('/dashboard', 'dashboard')}
-    className={location.pathname === '/dashboard' ? 'menu-item-selected' : ''}
-    style={getItemStyle('/dashboard')}
-  >
-  <Link to="/dashboard" className="nav-link">Dashboard</Link>
-  </Menu.Item>
-      {/* Profile: Everyone can edit their own profile */}
+      <Menu.Item 
+        key="/dashboard"
+        icon={<DashboardOutlined />}
+        onClick={() => handleMenuClick('/dashboard', 'dashboard')}
+        className={location.pathname === '/dashboard' ? 'menu-item-selected' : ''}
+        style={getItemStyle('/dashboard')}
+      >
+        <Link to="/dashboard" className="nav-link">Dashboard</Link>
+      </Menu.Item>
+      
       {hasPermission('EDIT_PROFILE') && (
         <Menu.Item 
-          key="/profile" // Utilisation du chemin comme clé
+          key="/profile"
           icon={<UserOutlined />}
           onClick={() => handleMenuClick('/profile', 'profile')}
           className={location.pathname === '/profile' ? 'menu-item-selected' : ''}
@@ -139,10 +137,9 @@ const Navbar = ({ title = "Data Hive", onCollapse, onPageChange }) => {
         </Menu.Item>
       )}
       
-      {/* Manage Members: Only owners can manage members */}
       {hasPermission('ADD_MEMBER') && (
         <Menu.Item 
-          key="/manage-member" // Utilisation du chemin comme clé
+          key="/manage-member"
           icon={<TeamOutlined />}
           onClick={() => handleMenuClick('/manage-member', 'manage-member')}
           className={location.pathname === '/manage-member' ? 'menu-item-selected' : ''}
@@ -152,9 +149,8 @@ const Navbar = ({ title = "Data Hive", onCollapse, onPageChange }) => {
         </Menu.Item>
       )}
       
-      {/* Magic Template: Available to all users */}
       <Menu.Item 
-        key="/magic-template" // Utilisation du chemin comme clé
+        key="/magic-template"
         icon={<AppstoreOutlined />}
         onClick={() => handleMenuClick('/magic-template', 'magic-template')}
         className={location.pathname === '/magic-template' ? 'menu-item-selected' : ''}
@@ -163,9 +159,8 @@ const Navbar = ({ title = "Data Hive", onCollapse, onPageChange }) => {
         <Link to="/magic-template" className="nav-link">Magic Template</Link>
       </Menu.Item>
       
-      {/* Overview: Available to all users */}
       <Menu.Item 
-        key="/overview" // Utilisation du chemin comme clé
+        key="/overview"
         icon={<AppstoreOutlined />}
         onClick={() => handleMenuClick('/overview', 'overview')}
         className={location.pathname === '/overview' ? 'menu-item-selected' : ''}
@@ -174,10 +169,9 @@ const Navbar = ({ title = "Data Hive", onCollapse, onPageChange }) => {
         <Link to="/overview" className="nav-link">Overview</Link>
       </Menu.Item>
       
-      {/* Subscription: Only owners can edit subscriptions */}
       {hasPermission('EDIT_SUBSCRIPTION') && (
         <Menu.Item 
-          key="/subscription-plans" // Utilisation du chemin comme clé
+          key="/subscription-plans"
           icon={<CreditCardOutlined />}
           onClick={() => handleMenuClick('/subscription-plans', 'subscription')}
           className={location.pathname === '/subscription-plans' ? 'menu-item-selected' : ''}
@@ -205,6 +199,19 @@ const Navbar = ({ title = "Data Hive", onCollapse, onPageChange }) => {
               {title}
             </Title>
           </Space>
+          <Popconfirm
+            title="Are you sure you want to sign out?"
+            onConfirm={handleSignOut}
+            okText="Yes"
+            cancelText="No"
+          >
+            <Button 
+              type="text" 
+              danger 
+              icon={<LogoutOutlined />} 
+              style={{ color: '#fff' }}
+            />
+          </Popconfirm>
         </header>
 
         <Drawer
@@ -232,6 +239,16 @@ const Navbar = ({ title = "Data Hive", onCollapse, onPageChange }) => {
         >
           <Divider className="drawer-divider" />
           {menuItems}
+          <Divider className="drawer-divider" />
+          <Button 
+            block
+            danger
+            icon={<LogoutOutlined />}
+            onClick={handleSignOut}
+            style={{ marginTop: '16px' }}
+          >
+            Sign Out
+          </Button>
         </Drawer>
       </>
     );
@@ -270,6 +287,30 @@ const Navbar = ({ title = "Data Hive", onCollapse, onPageChange }) => {
       
       <Divider className="sider-divider" style={{ backgroundColor: 'rgba(255,255,255,0.2)', margin: '16px 0' }} />
       {menuItems}
+      <Divider className="sider-divider" style={{ backgroundColor: 'rgba(255,255,255,0.2)', margin: '16px 0' }} />
+      <div style={{ padding: '0 16px 16px' }}>
+        <Popconfirm
+          title="Are you sure you want to sign out?"
+          onConfirm={handleSignOut}
+          okText="Yes"
+          cancelText="No"
+          placement={collapsed ? 'right' : 'top'}
+        >
+          <Button 
+            type="text"
+            block
+            icon={<LogoutOutlined />}
+            style={{ 
+              color: 'rgba(255, 255, 255, 0.65)',
+              textAlign: 'left',
+              height: 48,
+              padding: '0 16px'
+            }}
+          >
+            {!collapsed && 'Sign Out'}
+          </Button>
+        </Popconfirm>
+      </div>
     </Sider>
   );
 };

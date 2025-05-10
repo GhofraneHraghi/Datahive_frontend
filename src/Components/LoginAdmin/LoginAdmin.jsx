@@ -1,21 +1,21 @@
 import React, { useState } from "react";
-import { Button, Card, Form, Input, Typography, message as antMessage } from "antd";
+import { Button, Card, Form, Input, Typography, message as antMessage, Divider } from "antd";
 import { MailOutlined, LockOutlined, GoogleOutlined } from "@ant-design/icons";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Axios from "axios";
 import { signInWithGoogle } from "../firebase";
+import "./Login.css"; // Utilisez le même fichier CSS que votre page Login
 
 const { Title, Text } = Typography;
 
 const LoginAdmin = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const navigate = useNavigate();
 
-
-  // Récupération de l'URL de base depuis les variables d'environnement Vite
   const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
-  // Fonction pour gérer l'envoi du formulaire classique (email et mot de passe)
+
   const onFinish = async (values) => {
     setLoading(true);
     try {
@@ -38,8 +38,8 @@ const LoginAdmin = () => {
     }
   };
 
-  // Fonction pour gérer la connexion via Google
   const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
     const user = await signInWithGoogle();
     if (user) {
       try {
@@ -62,52 +62,86 @@ const LoginAdmin = () => {
         antMessage.error(
           err.response?.data?.message || "Erreur lors de la connexion avec Google"
         );
+      } finally {
+        setGoogleLoading(false);
       }
     }
   };
 
   return (
-    <div className="loginPage">
-      <Card className="loginCard">
-        <Title level={2} className="loginTitle">Welcome Back!</Title>
-
-        <Form form={form} onFinish={onFinish} layout="vertical">
-          <Form.Item
-            name="email"
-            label="Email"
-            rules={[{ required: true, type: "email", message: "Veuillez entrer un email valide!" }]}
+    <div className="login-container">
+      <div className="login-background"></div>
+      <div className="login-content">
+        <Card className="login-card">
+          <div className="login-header">
+            <Title level={2} className="login-title">Admin Portal</Title>
+            <Text className="login-subtitle">Sign in to access the admin dashboard</Text>
+          </div>
+          
+          <Form
+            form={form}
+            onFinish={onFinish}
+            layout="vertical"
+            className="login-form"
           >
-            <Input prefix={<MailOutlined />} placeholder="Enter email" />
-          </Form.Item>
+            <Form.Item
+              name="email"
+              label="Email"
+              rules={[
+                { required: true, message: "Please enter your email!" },
+                { type: "email", message: "Invalid email address!" }
+              ]}
+            >
+              <Input
+                prefix={<MailOutlined className="input-icon" />}
+                placeholder="Enter your email"
+                size="large"
+              />
+            </Form.Item>
 
-          <Form.Item
-            name="password"
-            label="Mot de passe"
-            rules={[{ required: true, message: "Veuillez entrer votre mot de passe!" }]}
-          >
-            <Input.Password prefix={<LockOutlined />} placeholder="Enter password" />
-          </Form.Item>
+            <Form.Item
+              name="password"
+              label="Password"
+              rules={[
+                { required: true, message: "Please enter your password!" }
+              ]}
+            >
+              <Input.Password
+                prefix={<LockOutlined className="input-icon" />}
+                placeholder="Enter your password"
+                size="large"
+              />
+            </Form.Item>
 
-          <Form.Item>
-            <Button type="primary" htmlType="submit" loading={loading} block>
-              Se connecter
-            </Button>
-          </Form.Item>
-        </Form>
+            <Form.Item>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={loading}
+                block
+                size="large"
+                className="submit-btn"
+              >
+                Sign In
+              </Button>
+            </Form.Item>
+          </Form>
 
-        <Button
-          type="default"
-          icon={<GoogleOutlined />}
-          onClick={handleGoogleLogin}
-          block
-        >
-          Se connecter avec Google
-        </Button>
+          <Divider className="divider">or continue with</Divider>
 
-        <Text>
-          Vous navez pas de compte ? <Link to="/register">Sinscrire</Link>
-        </Text>
-      </Card>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+  <Button
+    icon={<GoogleOutlined />}
+    onClick={handleGoogleLogin}
+    loading={googleLoading}
+    size="large"
+    className="google-btn"
+  >
+    Sign in with Google
+  </Button>
+</div>
+        </Card>
+      </div>
     </div>
   );
 };

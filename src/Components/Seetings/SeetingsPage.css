@@ -1,0 +1,33 @@
+.settings-page {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+  
+  .settings-page .ant-card {
+    margin-bottom: 24px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .settings-page .ant-card-head {
+    border-bottom: none;
+  }
+  
+  .settings-page .ant-card-head-title {
+    font-weight: 500;
+    font-size: 18px;
+  }
+  
+  .settings-page .ant-form-item-label label {
+    font-weight: 500;
+  }
+  
+  .settings-page .ant-avatar {
+    background-color: #f0f2f5;
+    margin-bottom: 8px;
+  }
+  
+  .settings-page .ant-btn {
+    border-radius: 6px;
+  }

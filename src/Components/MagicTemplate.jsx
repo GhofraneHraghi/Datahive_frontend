@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Button, message, Layout, Card, Steps, Typography, Divider, Alert, Collapse } from 'antd';
+import { Button, message, Layout, Card, Steps, Typography, Divider, Alert, Collapse, Select, Spin } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './Dashboard/Navbar';
 
@@ -8,12 +8,16 @@ const { Content } = Layout;
 const { Step } = Steps;
 const { Title, Text, Paragraph } = Typography;
 const { Panel } = Collapse;
+const { Option } = Select;
 
 const MagicTemplate = () => {
   const [loading, setLoading] = useState(false);
   const [debugInfo, setDebugInfo] = useState(null);
   const [collapsed, setCollapsed] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [templates, setTemplates] = useState([]);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
   const navigate = useNavigate();
   const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
@@ -21,13 +25,47 @@ const MagicTemplate = () => {
     const token = localStorage.getItem('token');
     if (!token) {
       navigate('/login');
+    } else {
+      fetchTemplates();
     }
   }, [navigate]);
+
+  const fetchTemplates = async () => {
+    setLoadingTemplates(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(
+        `${VITE_BACKEND_BASE_URL}/api/looker-templates`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      if (response.data?.templates && response.data.templates.length > 0) {
+        setTemplates(response.data.templates);
+        setSelectedTemplate(response.data.templates[0].id); // Select first template by default
+      }
+    } catch (error) {
+      console.error('Erreur de chargement des templates:', error);
+      message.error('Impossible de charger les templates de rapport');
+      
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        navigate('/login');
+      }
+    } finally {
+      setLoadingTemplates(false);
+    }
+  };
 
   const fetchLookerLink = async () => {
     setLoading(true);
     setDebugInfo(null);
-    setCurrentStep(1); // Passer à l'étape suivante après le clic
+    setCurrentStep(1); // Move to next step after click
     
     try {
       const token = localStorage.getItem('token');
@@ -42,6 +80,9 @@ const MagicTemplate = () => {
       const response = await axios.get(
         `${VITE_BACKEND_BASE_URL}/api/looker-link`,
         {
+          params: {
+            templateId: selectedTemplate
+          },
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -55,13 +96,8 @@ const MagicTemplate = () => {
       
       setDebugInfo(response.data.url);
       
-      if (response.data.url.includes('datasources/create')) {
-        console.warn("ATTENTION: L'URL utilise toujours l'ancien format!");
-        message.warning("L'URL générée utilise l'ancien format. Contactez l'administrateur.");
-      }
-      
       window.open(response.data.url, '_blank', 'noopener,noreferrer');
-      message.success('Looker Studio s\'ouvre dans un nouvel onglet');
+      message.success('Votre rapport Looker Studio s\'ouvre dans un nouvel onglet');
       
     } catch (error) {
       console.error('Erreur:', error);
@@ -88,94 +124,118 @@ const MagicTemplate = () => {
 
   const steps = [
     {
-      title: 'Lancer Looker Studio',
+      title: 'Choisir un template',
       content: (
         <div style={{ textAlign: 'center', margin: '40px 0' }}>
-          <Button 
-            type="primary"
-            size="large"
-            onClick={fetchLookerLink}
-            loading={loading}
-          >
-            Ouvrir Looker Studio
-          </Button>
-          <Paragraph style={{ marginTop: 20 }}>
-            Cliquez sur le bouton ci-dessus pour ouvrir Looker Studio dans un nouvel onglet.
-          </Paragraph>
+          <Card style={{ marginBottom: 20 }}>
+            <Title level={4}>Sélectionnez un modèle de rapport</Title>
+            <Paragraph>
+              Choisissez parmi nos templates préconçus pour démarrer rapidement avec un rapport adapté à vos besoins.
+            </Paragraph>
+            
+            {loadingTemplates ? (
+              <div style={{ textAlign: 'center', padding: '20px' }}>
+                <Spin tip="Chargement des templates..." />
+              </div>
+            ) : (
+              <Select
+                style={{ width: '100%', marginTop: 16, marginBottom: 24, maxWidth: 500 }}
+                placeholder="Sélectionnez un template"
+                value={selectedTemplate}
+                onChange={(value) => setSelectedTemplate(value)}
+                disabled={templates.length === 0}
+                size="large"
+              >
+                {templates.map(template => (
+                  <Option key={template.id} value={template.id}>
+                    {template.name} - {template.description}
+                  </Option>
+                ))}
+              </Select>
+            )}
+            
+            {templates.length === 0 && !loadingTemplates && (
+              <Alert
+                message="Aucun template disponible"
+                description="Contactez votre administrateur pour créer des templates de rapport."
+                type="info"
+                showIcon
+                style={{ marginTop: 20 }}
+              />
+            )}
+            
+            <Button 
+              type="primary"
+              size="large"
+              onClick={fetchLookerLink}
+              loading={loading}
+              disabled={templates.length === 0 || !selectedTemplate}
+              style={{ marginTop: 16 }}
+            >
+              Générer mon rapport
+            </Button>
+          </Card>
+          
+          <Alert
+            message="Information"
+            description="Le rapport sera pré-configuré avec votre base de données. Aucune configuration manuelle n'est nécessaire."
+            type="info"
+            showIcon
+          />
         </div>
       ),
     },
     {
-      title: 'Configurer la source de données',
+      title: 'Personnaliser votre rapport',
       content: (
         <Card style={{ marginTop: 20 }}>
-          <Title level={4}>Étapes de configuration :</Title>
-          <ol>
-            <li>Dans Looker Studio, sélectionnez <Text strong>"Créer une source de données"</Text></li>
-            <li>Choisissez le connecteur MySQL</li>
-            <li>Remplissez les champs avec les informations suivantes :</li>
-          </ol>
-          
-          <Divider orientation="left">Paramètres de connexion</Divider>
-          
-          <Alert
-            message="Informations sensibles"
-            description="Ces identifiants sont personnels et confidentiels"
-            type="warning"
-            showIcon
-            style={{ marginBottom: 20 }}
-          />
-          
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <tbody>
-              <tr>
-                <td style={{ padding: '8px', border: '1px solid #d9d9d9', width: '120px' }}><Text strong>IP :</Text></td>
-                <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>51.38.187.245</td>
-              </tr>
-              <tr>
-                <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}><Text strong>Port :</Text></td>
-                <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>3306</td>
-              </tr>
-              <tr>
-                <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}><Text strong>Database :</Text></td>
-                <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
-                  Votre nom de base de données (visible dans lURL Looker après ouverture)
-                </td>
-              </tr>
-              <tr>
-                <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}><Text strong>User :</Text></td>
-                <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>looker_user</td>
-              </tr>
-              <tr>
-                <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}><Text strong>Password :</Text></td>
-                <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>lokaszsh98@Datahive_looker</td>
-              </tr>
-            </tbody>
-          </table>
-          
-          <Paragraph style={{ marginTop: 20 }}>
-            Après avoir rempli ces champs, cliquez sur <Text strong>"Authentifier"</Text> pour valider la connexion.
+          <Title level={4}>Votre rapport est prêt !</Title>
+          <Paragraph>
+            Votre rapport Looker Studio sest ouvert dans un nouvel onglet avec :
           </Paragraph>
-        </Card>
-      ),
-    },
-    {
-      title: 'Créer et enregistrer le rapport',
-      content: (
-        <Card style={{ marginTop: 20 }}>
-          <Title level={4}>Finalisation du rapport</Title>
+          
+          <ul style={{ marginBottom: 20 }}>
+            <li>Connexion automatique à votre base de données</li>
+            <li>Template préconfiguré selon votre choix</li>
+            <li>Tables et champs déjà sélectionnés</li>
+          </ul>
+          
+          <Title level={4}>Modifications possibles :</Title>
           <ol>
-            <li>Une fois la source de données configurée, sélectionnez les tables et champs nécessaires</li>
-            <li>Créez vos visualisations (tableaux, graphiques, etc.)</li>
-            <li>Cliquez sur <Text strong>"Enregistrer"</Text> dans le menu supérieur</li>
-            <li>Donnez un nom clair à votre rapport</li>
-            <li>Choisissez un dossier de destination si nécessaire</li>
-            <li>Cliquez sur <Text strong>"Enregistrer"</Text> pour finaliser</li>
+            <li>Ajoutez ou modifiez les visualisations selon vos besoins</li>
+            <li>Personnalisez les filtres et les plages de dates</li>
+            <li>Ajustez la mise en page et les couleurs</li>
+            <li>Cliquez sur <Text strong>"Enregistrer"</Text> dans le menu supérieur pour sauvegarder vos modifications</li>
           </ol>
           
           <Alert
             message="Astuce"
-            description="Vous pouvez partager votre rapport en cliquant sur 'Partager' dans le menu supérieur"
+            description="Pour partager votre rapport, cliquez sur 'Partager' dans le menu supérieur de Looker Studio."
+            type="info"
+            showIcon
+            style={{ marginTop: 20 }}
+          />
+        </Card>
+      ),
+    },
+    {
+      title: 'Gérer vos rapports',
+      content: (
+        <Card style={{ marginTop: 20 }}>
+          <Title level={4}>Accéder à vos rapports existants</Title>
+          <Paragraph>
+            Vous pouvez accéder à tous vos rapports précédemment créés :
+          </Paragraph>
+          
+          <ol>
+            <li>Visitez <a href="https://lookerstudio.google.com/u/0/navigation/reporting" target="_blank" rel="noopener noreferrer">Looker Studio</a></li>
+            <li>Connectez-vous avec votre compte Google si nécessaire</li>
+            <li>Vos rapports apparaîtront dans la liste des rapports récents</li>
+          </ol>
+          
+          <Alert
+            message="Besoin d'aide ?"
+            description="Si vous rencontrez des difficultés avec vos rapports, contactez notre équipe de support technique."
             type="info"
             showIcon
             style={{ marginTop: 20 }}
@@ -197,9 +257,9 @@ const MagicTemplate = () => {
       >
         <Content style={{ margin: '24px 16px 0', overflow: 'initial' }}>
           <div style={{ padding: 24, background: '#fff', minHeight: 'calc(100vh - 112px)' }}>
-            <Title level={2}>Guide de création de rapport Looker Studio</Title>
+            <Title level={2}>Rapports Looker Studio</Title>
             <Paragraph>
-              Suivez ces étapes pour connecter votre base de données et créer votre premier rapport.
+              Créez et personnalisez facilement des rapports Looker Studio avec vos données.
             </Paragraph>
             
             <Steps current={currentStep} style={{ margin: '40px 0' }}>
