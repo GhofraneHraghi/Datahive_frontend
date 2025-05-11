@@ -232,7 +232,7 @@ const MagicTemplate = () => {
         <Card style={{ marginTop: 20 }}>
           {isEmptyTemplate ? (
             <>
-              <Title level={4}>Création d'un nouveau rapport</Title>
+              <Title level={4}>Création dun nouveau rapport</Title>
               <Paragraph>
                 Vous avez choisi de créer un rapport vide. Voici comment procéder :
               </Paragraph>
@@ -252,7 +252,7 @@ const MagicTemplate = () => {
             <>
               <Title level={4}>Votre rapport est prêt !</Title>
               <Paragraph>
-                Votre rapport Looker Studio s'est ouvert dans un nouvel onglet avec :
+                Votre rapport Looker Studio sest ouvert dans un nouvel onglet avec :
               </Paragraph>
               
               <ul style={{ marginBottom: 20 }}>

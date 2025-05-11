@@ -427,7 +427,7 @@ const handleProfileUpdate = async (values) => {
                   }
                   style={{ marginBottom: 24 }}
                 >
-                  <Form className="profile-form"
+                  <Form 
                     form={profileForm}
                     layout="vertical"
                     onFinish={handleProfileUpdate}

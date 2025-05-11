@@ -8,18 +8,25 @@ import {
   message,
   Avatar,
   Upload,
-  Space
+  Space,
+  Layout,
+  Divider,
+  Spin
 } from 'antd';
 import { 
   UserOutlined, 
   LockOutlined,
   MailOutlined,
   EditOutlined,
-  CameraOutlined 
+  CameraOutlined,
+  SaveOutlined
 } from '@ant-design/icons';
 import axios from 'axios';
+import NavbarAdmin from '../NavbarAdmin';
+import './SeetingsPage.css';
 
 const { Title } = Typography;
+const { Content } = Layout;
 const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || '';
 
 const SettingsPage = () => {
@@ -29,35 +36,47 @@ const SettingsPage = () => {
   const [profileLoading, setProfileLoading] = useState(false);
   const [userData, setUserData] = useState(null);
   const [imageUrl, setImageUrl] = useState(null);
+  const [collapsed, setCollapsed] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
 
   useEffect(() => {
     fetchUserData();
   }, []);
 
   const fetchUserData = async () => {
+    setPageLoading(true);
     try {
+      // Get authentication data from localStorage
       const token = localStorage.getItem('token');
       const employeeId = localStorage.getItem('employeeId');
       
+      // Debug logs
+      console.log('Token available:', !!token);
+      console.log('Employee ID:', employeeId);
+      
       if (!token || !employeeId) {
         message.error('Session expirée. Veuillez vous reconnecter.');
+        setPageLoading(false);
+        // Redirect to login page would be helpful here
+        // window.location.href = '/login-admin';
         return;
       }
-
-      console.log('Trying to fetch data for employee:', employeeId);
-      console.log('Using token:', token ? `${token.substring(0, 10)}...` : 'No token');
+       
+      // Make sure the URL is constructed correctly
+      const apiUrl = `${VITE_BACKEND_BASE_URL}/api/employee/${employeeId}`;
+      console.log('API URL:', apiUrl);
       
-      const response = await axios.get(`${VITE_BACKEND_BASE_URL}/api/employee/${employeeId}`, {
+      const response = await axios.get(apiUrl, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
       
-      console.log('User data received:', response.data);
+      console.log('API Response:', response.data);
       setUserData(response.data);
       
-      // Adaptation des noms de champs pour le formulaire
+      // Set form fields
       profileForm.setFieldsValue({
         firstName: response.data.firstName || response.data.first_name,
         lastName: response.data.lastName || response.data.last_name,
@@ -69,17 +88,29 @@ const SettingsPage = () => {
       }
     } catch (error) {
       console.error('Erreur fetch data:', error);
-      console.error('Response:', error.response);
       
-      if (error.response?.status === 403) {
-        message.error('Accès non autorisé. Vos droits sont insuffisants ou votre session a expiré.');
-      } else if (error.response?.status === 401) {
-        message.error('Session expirée. Veuillez vous reconnecter.');
-        // Rediriger vers la page de connexion si nécessaire
-        // window.location.href = '/login';
+      // Handle different error types
+      if (error.response) {
+        console.log('Error response status:', error.response.status);
+        console.log('Error response data:', error.response.data);
+        
+        if (error.response.status === 403) {
+          message.error('Accès non autorisé. Vos droits sont insuffisants ou votre session a expiré.');
+          // Consider clearing local storage and redirecting to login
+          localStorage.removeItem('token');
+          localStorage.removeItem('employeeId');
+          // window.location.href = '/login-admin';
+        } else if (error.response.status === 401) {
+          message.error('Session expirée. Veuillez vous reconnecter.');
+          // window.location.href = '/login-admin';
+        } else {
+          message.error('Erreur lors du chargement des données utilisateur');
+        }
       } else {
-        message.error('Erreur lors du chargement des données utilisateur');
+        message.error('Erreur de connexion au serveur');
       }
+    } finally {
+      setPageLoading(false);
     }
   };
 
@@ -133,7 +164,6 @@ const SettingsPage = () => {
         return;
       }
       
-      // Adaptation des noms de champs pour l'API
       await axios.put(`${VITE_BACKEND_BASE_URL}/api/employee/${employeeId}`, {
         first_name: values.firstName,
         last_name: values.lastName,
@@ -188,136 +218,208 @@ const SettingsPage = () => {
     return false; // Empêche le comportement par défaut de l'upload
   };
 
-  return (
-    <div className="settings-page">
-      <Title level={2} style={{ marginBottom: 24 }}>Paramètres du compte</Title>
-      
-      <Card title="Informations du profil" style={{ marginBottom: 24 }}>
-        <Space size="large" align="start">
-          <div style={{ textAlign: 'center' }}>
-            <Upload
-              accept="image/*"
-              showUploadList={false}
-              beforeUpload={handleImageUpload}
-            >
-              <Avatar
-                size={128}
-                icon={<UserOutlined />}
-                src={imageUrl}
-                style={{ cursor: 'pointer' }}
-              />
-              <div style={{ marginTop: 8 }}>
-                <Button icon={<CameraOutlined />} type="link">
-                  Changer la photo
-                </Button>
-              </div>
-            </Upload>
+  const handleCollapse = (collapsed) => {
+    setCollapsed(collapsed);
+  };
+
+  // Calculer la marge gauche dynamiquement en fonction de l'état du collapse
+  const contentStyle = {
+    marginLeft: collapsed ? '80px' : '250px',
+    transition: 'all 0.2s ease',
+    padding: '24px',
+    minHeight: '100vh',
+    background: '#f0f2f5'
+  };
+
+  if (pageLoading) {
+    return (
+      <Layout style={{ minHeight: '100vh' }}>
+        <NavbarAdmin onCollapse={handleCollapse} />
+        <Content style={contentStyle} className="settings-content">
+          <div className="loading-container">
+            <Spin size="large" tip="Chargement des données..." />
           </div>
-          
+        </Content>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout style={{ minHeight: '100vh' }}>
+      <NavbarAdmin onCollapse={handleCollapse} />
+      
+      <Content style={contentStyle} className="settings-content">
+        
+          <Title className="page-header">Paramètres du compte</Title>
+        
+        
+        <Card 
+          title="Informations du profil" 
+          className="profile-card" 
+          variant="bordered"
+          style={{ marginBottom: 24, borderRadius: 12, boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)' }}
+        >
+          <div className="profile-container-centered">
+            <div className="avatar-section">
+              <Upload
+                accept="image/*"
+                showUploadList={false}
+                beforeUpload={handleImageUpload}
+              >
+                <div className="avatar-upload">
+                  <Avatar
+                    size={130}
+                    icon={<UserOutlined />}
+                    src={imageUrl}
+                    className="profile-avatar"
+                  />
+                  <div className="avatar-overlay">
+                    <CameraOutlined className="camera-icon" />
+                  </div>
+                </div>
+              </Upload>
+              <Button 
+                type="text" 
+                icon={<CameraOutlined />}
+                className="change-photo-btn"
+              >
+                Changer la photo
+              </Button>
+            </div>
+            
+            <Form
+              form={profileForm}
+              onFinish={handleProfileUpdate}
+              layout="vertical"
+              className="profile-form"
+            >
+              <Form.Item
+                name="firstName"
+                label="Prénom"
+                rules={[{ required: true, message: 'Veuillez entrer votre prénom' }]}
+              >
+                <Input 
+                  prefix={<UserOutlined />} 
+                  className="modern-input" 
+                />
+              </Form.Item>
+              
+              <Form.Item
+                name="lastName"
+                label="Nom"
+                rules={[{ required: true, message: 'Veuillez entrer votre nom' }]}
+              >
+                <Input 
+                  prefix={<UserOutlined />} 
+                  className="modern-input" 
+                />
+              </Form.Item>
+              
+              <Form.Item
+                name="email"
+                label="Email"
+                rules={[
+                  { required: true, message: 'Veuillez entrer votre email' },
+                  { type: 'email', message: 'Email invalide' }
+                ]}
+              >
+                <Input 
+                  prefix={<MailOutlined />} 
+                  className="modern-input" 
+                  disabled
+                  style={{ backgroundColor: '#f5f5f5', color: '#666' }}
+                />
+              </Form.Item>
+              
+              <Form.Item>
+                <Button 
+                  type="primary" 
+                  htmlType="submit" 
+                  loading={profileLoading}
+                  icon={<SaveOutlined />}
+                  className="submit-button"
+                >
+                  Enregistrer les modifications
+                </Button>
+              </Form.Item>
+            </Form>
+          </div>
+        </Card>
+        
+        <Card 
+          title="Sécurité" 
+          className="password-card" 
+          variant="bordered"
+          style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)' }}
+        >
           <Form
-            form={profileForm}
-            onFinish={handleProfileUpdate}
+            form={form}
+            onFinish={handlePasswordChange}
             layout="vertical"
-            style={{ flex: 1 }}
+            className="password-form"
           >
             <Form.Item
-              name="firstName"
-              label="Prénom"
-              rules={[{ required: true, message: 'Veuillez entrer votre prénom' }]}
+              name="currentPassword"
+              label="Mot de passe actuel"
+              rules={[{ required: true, message: 'Veuillez entrer votre mot de passe actuel' }]}
             >
-              <Input prefix={<UserOutlined />} />
+              <Input.Password 
+                prefix={<LockOutlined />} 
+                className="modern-input" 
+              />
             </Form.Item>
             
             <Form.Item
-              name="lastName"
-              label="Nom"
-              rules={[{ required: true, message: 'Veuillez entrer votre nom' }]}
-            >
-              <Input prefix={<UserOutlined />} />
-            </Form.Item>
-            
-            <Form.Item
-              name="email"
-              label="Email"
+              name="newPassword"
+              label="Nouveau mot de passe"
               rules={[
-                { required: true, message: 'Veuillez entrer votre email' },
-                { type: 'email', message: 'Email invalide' }
+                { required: true, message: 'Veuillez entrer un nouveau mot de passe' },
+                { min: 8, message: 'Le mot de passe doit contenir au moins 8 caractères' }
               ]}
             >
-              <Input prefix={<MailOutlined />} />
+              <Input.Password 
+                prefix={<LockOutlined />} 
+                className="modern-input" 
+              />
+            </Form.Item>
+            
+            <Form.Item
+              name="confirmPassword"
+              label="Confirmer le nouveau mot de passe"
+              dependencies={['newPassword']}
+              rules={[
+                { required: true, message: 'Veuillez confirmer votre nouveau mot de passe' },
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    if (!value || getFieldValue('newPassword') === value) {
+                      return Promise.resolve();
+                    }
+                    return Promise.reject(new Error('Les mots de passe ne correspondent pas'));
+                  },
+                }),
+              ]}
+            >
+              <Input.Password 
+                prefix={<LockOutlined />} 
+                className="modern-input" 
+              />
             </Form.Item>
             
             <Form.Item>
               <Button 
                 type="primary" 
                 htmlType="submit" 
-                loading={profileLoading}
-                icon={<EditOutlined />}
+                loading={loading}
+                icon={<LockOutlined />}
+                className="submit-button"
               >
-                Mettre à jour le profil
+                Mettre à jour le mot de passe
               </Button>
             </Form.Item>
           </Form>
-        </Space>
-      </Card>
-      
-      <Card title="Changer le mot de passe">
-        <Form
-          form={form}
-          onFinish={handlePasswordChange}
-          layout="vertical"
-        >
-          <Form.Item
-            name="currentPassword"
-            label="Mot de passe actuel"
-            rules={[{ required: true, message: 'Veuillez entrer votre mot de passe actuel' }]}
-          >
-            <Input.Password prefix={<LockOutlined />} />
-          </Form.Item>
-          
-          <Form.Item
-            name="newPassword"
-            label="Nouveau mot de passe"
-            rules={[
-              { required: true, message: 'Veuillez entrer un nouveau mot de passe' },
-              { min: 8, message: 'Le mot de passe doit contenir au moins 8 caractères' }
-            ]}
-          >
-            <Input.Password prefix={<LockOutlined />} />
-          </Form.Item>
-          
-          <Form.Item
-            name="confirmPassword"
-            label="Confirmer le nouveau mot de passe"
-            dependencies={['newPassword']}
-            rules={[
-              { required: true, message: 'Veuillez confirmer votre nouveau mot de passe' },
-              ({ getFieldValue }) => ({
-                validator(_, value) {
-                  if (!value || getFieldValue('newPassword') === value) {
-                    return Promise.resolve();
-                  }
-                  return Promise.reject(new Error('Les mots de passe ne correspondent pas'));
-                },
-              }),
-            ]}
-          >
-            <Input.Password prefix={<LockOutlined />} />
-          </Form.Item>
-          
-          <Form.Item>
-            <Button 
-              type="primary" 
-              htmlType="submit" 
-              loading={loading}
-              icon={<LockOutlined />}
-            >
-              Changer le mot de passe
-            </Button>
-          </Form.Item>
-        </Form>
-      </Card>
-    </div>
+        </Card>
+      </Content>
+    </Layout>
   );
 };
 

@@ -46,7 +46,7 @@ function App() {
         <Route path="/users" element={<UserList/>}/>
         <Route path="/loginAdmin" element={<LoginAdmin />} />
         <Route path="/dashboard-admin" element={<AdminDashboard/>}/>
-        <Route path="/seetings" element={<SeetingsPage/>}/>
+        <Route path="/settings" element={<SeetingsPage/>}/>
         <Route path="/" element={<Page/>}/>
         <Route path="/magic-template" element={<MagicTemplate />} />
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Menu, Button, Typography, Drawer, Divider, Space } from 'antd';
+import { Layout, Menu, Button, Typography, Drawer, Divider, Space, Popconfirm } from 'antd';
 import { 
   MenuUnfoldOutlined, 
   MenuFoldOutlined,
@@ -9,9 +9,10 @@ import {
   CreditCardOutlined,
   MenuOutlined,
   LeftOutlined,
-  DashboardOutlined
+  DashboardOutlined,
+  LogoutOutlined
 } from '@ant-design/icons';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './NavbarAdmin.css';
 
 const { Sider } = Layout;
@@ -21,8 +22,16 @@ const NavbarAdmin = ({ title = "Data Hive", onCollapse, onPageChange }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-
+  const navigate = useNavigate();
   const location = useLocation();
+
+  const handleSignOut = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('employee');
+    sessionStorage.removeItem('currentEmployee');
+    navigate('/loginAdmin');
+    window.location.reload();
+  };
 
   const handleMenuClick = (key, page) => {
     if (onPageChange) onPageChange(page);
@@ -95,7 +104,7 @@ const NavbarAdmin = ({ title = "Data Hive", onCollapse, onPageChange }) => {
         className={location.pathname === '/subscription-admin' ? 'menu-item-selected' : ''}
         style={getItemStyle('/subscription-admin')}
       >
-        <Link to="/subscription-admin" className="nav-link">abonnement</Link>
+        <Link to="/subscription-admin" className="nav-link">Abonnement</Link>
       </Menu.Item>
       
       <Menu.Item 
@@ -105,17 +114,17 @@ const NavbarAdmin = ({ title = "Data Hive", onCollapse, onPageChange }) => {
         className={location.pathname === '/users' ? 'menu-item-selected' : ''}
         style={getItemStyle('/users')}
       >
-        <Link to="/users" className="nav-link">utilisateur</Link>
+        <Link to="/users" className="nav-link">Utilisateurs</Link>
       </Menu.Item>
       
       <Menu.Item 
-        key="/seetings"
+        key="/settings"
         icon={<AppstoreOutlined />}
-        onClick={() => handleMenuClick('/seetings', 'seetings')}
-        className={location.pathname === '/seetings' ? 'menu-item-selected' : ''}
-        style={getItemStyle('/seetings')}
+        onClick={() => handleMenuClick('/settings', 'settings')}
+        className={location.pathname === '/settings' ? 'menu-item-selected' : ''}
+        style={getItemStyle('/settings')}
       >
-        <Link to="/seetings" className="nav-link">Paramètres</Link>
+        <Link to="/settings" className="nav-link">Paramètres</Link>
       </Menu.Item>
     </Menu>
   );
@@ -136,6 +145,19 @@ const NavbarAdmin = ({ title = "Data Hive", onCollapse, onPageChange }) => {
               {title}
             </Title>
           </Space>
+          <Popconfirm
+            title="Êtes-vous sûr de vouloir vous déconnecter?"
+            onConfirm={handleSignOut}
+            okText="Oui"
+            cancelText="Non"
+          >
+            <Button 
+              type="text" 
+              danger 
+              icon={<LogoutOutlined />} 
+              style={{ color: '#fff' }}
+            />
+          </Popconfirm>
         </header>
 
         <Drawer
@@ -163,6 +185,16 @@ const NavbarAdmin = ({ title = "Data Hive", onCollapse, onPageChange }) => {
         >
           <Divider className="drawer-divider" />
           {menuItems}
+          <Divider className="drawer-divider" />
+          <Button 
+            block
+            danger
+            icon={<LogoutOutlined />}
+            onClick={handleSignOut}
+            style={{ marginTop: '16px' }}
+          >
+            Déconnexion
+          </Button>
         </Drawer>
       </>
     );
@@ -201,6 +233,30 @@ const NavbarAdmin = ({ title = "Data Hive", onCollapse, onPageChange }) => {
       
       <Divider className="sider-divider" style={{ backgroundColor: 'rgba(255,255,255,0.2)', margin: '16px 0' }} />
       {menuItems}
+      <Divider className="sider-divider" style={{ backgroundColor: 'rgba(255,255,255,0.2)', margin: '16px 0' }} />
+      <div style={{ padding: '0 16px 16px' }}>
+        <Popconfirm
+          title="Êtes-vous sûr de vouloir vous déconnecter?"
+          onConfirm={handleSignOut}
+          okText="Oui"
+          cancelText="Non"
+          placement={collapsed ? 'right' : 'top'}
+        >
+          <Button 
+            type="text"
+            block
+            icon={<LogoutOutlined />}
+            style={{ 
+              color: 'rgba(255, 255, 255, 0.65)',
+              textAlign: 'left',
+              height: 48,
+              padding: '0 16px'
+            }}
+          >
+            {!collapsed && 'Déconnexion'}
+          </Button>
+        </Popconfirm>
+      </div>
     </Sider>
   );
 };
