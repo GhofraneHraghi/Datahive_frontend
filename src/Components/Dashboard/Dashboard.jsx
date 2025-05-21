@@ -112,7 +112,7 @@ const Dashboard = () => {
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText('test-google-play-console@pc-api-4722596725443039036-6');
+    navigator.clipboard.writeText('test-google-play-console@pc-api-4722596725443039036-618.iam.gserviceaccount.com');
     messageApi.success('Email copié !', 2);
   };
 
@@ -181,7 +181,7 @@ const Dashboard = () => {
           <Form.Item label="Email d'invitation">
             <Input.Group compact>
               <Input
-                value="test-google-play-console@pc-api-4722596725443039036-6"
+                value="test-google-play-console@pc-api-4722596725443039036-618.iam.gserviceaccount.com"
                 readOnly
                 className="readonly-input"
               />

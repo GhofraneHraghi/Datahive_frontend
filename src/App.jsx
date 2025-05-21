@@ -16,6 +16,7 @@ import ResetPassword from './Components/ResetPassword';
 import ChangePassword from './Components/ChangePassword';
 import ManageMember from "./Components/ManageMember/ManageMember.jsx";
 import SuccessPage from './Components/Subscription/SuccessPage.jsx';
+import CancelledPage from './Components/Subscription/CancelledPage.jsx';
 import UserList from "./Components/UserList/UserList";
 import AdminDashboard from './Components/Dashboard/AdminDashboard';
 import SeetingsPage from './Components/Seetings/SeetingsPage';
@@ -24,6 +25,7 @@ import Page from './Components/page';
 import MagicTemplate from './Components/MagicTemplate';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
+
 
 
 function App() {
@@ -43,6 +45,7 @@ function App() {
         <Route path="/change-password/:token" element={<ChangePassword />} />
         <Route path="/overview" element={<OverviewPage />} />
         <Route path="/success" element={<SuccessPage />} />
+        <Route path="/cancell" element={<CancelledPage />} />
         <Route path="/users" element={<UserList/>}/>
         <Route path="/loginAdmin" element={<LoginAdmin />} />
         <Route path="/dashboard-admin" element={<AdminDashboard/>}/>

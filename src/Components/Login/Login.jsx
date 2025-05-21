@@ -38,13 +38,16 @@ const Login = () => {
     
     const userData = {
       id: user.id,
-      tenant_id: user.tenant_id,
+      tenant_id: user.tenant_id, // Ensure tenant_id is included here
       role_id: user.role_id,
       email: user.email,
       permissions: user.permissions,
       subscription_id: user.subscription_id || null,
       has_active_subscription: subscriptionInfo?.status === 'active'
     };
+
+    // Log the userData to verify tenant_id is properly included
+    console.log('User data being stored:', userData);
 
     localStorage.setItem("user", JSON.stringify(userData));
     localStorage.setItem("token", token);
@@ -58,6 +61,10 @@ const Login = () => {
         email: values.email,
         password: values.password,
       });
+      
+      // Log the response to verify tenant_id is coming from backend
+      console.log('Login response:', response.data);
+      
       if (response.data.token) {
         await processUserData(response.data);
         message.success("Connexion réussie !");
@@ -76,6 +83,9 @@ const Login = () => {
       const response = await axios.post(`${VITE_BACKEND_BASE_URL}/api/google-login`, {
         email: result.user.email,
       });
+      
+      // Log the response to verify tenant_id is coming from Google login
+      console.log('Google login response:', response.data);
   
       if (response.data.token) {
         await processUserData(response.data);
@@ -203,7 +213,6 @@ const Login = () => {
         </Card>
       </div>
 
-      {/* Reset Password Modal (identique) */}
       <Modal
         title="Reset Password"
         open={resetModalVisible}

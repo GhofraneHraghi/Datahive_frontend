@@ -31,6 +31,7 @@ const MagicTemplate = () => {
   const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const [dbName, setDbName] = useState('');
   const navigate = useNavigate();
   const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
@@ -44,7 +45,26 @@ const MagicTemplate = () => {
     } else {
       fetchTemplates();
     }
+    fetchDbName();
   }, [navigate]);
+
+  const fetchDbName = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(
+        `${VITE_BACKEND_BASE_URL}/api/tenant-db`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      setDbName(response.data.db_name);
+    } catch (error) {
+      setDbName('');
+    }
+  };
 
   const fetchTemplates = async () => {
     setLoadingTemplates(true);
@@ -280,67 +300,82 @@ const MagicTemplate = () => {
                 showIcon
                 style={{ marginBottom: 20 }}
               />
-              
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 16 }}>
-                <tbody>
-                  <tr>
-                    <td style={{ padding: '8px', border: '1px solid #d9d9d9', width: '150px' }}>
-                      <Text strong>Hôte MySQL:</Text>
-                    </td>
-                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
-                      51.38.187.245
-                      <Button 
-                        type="text" 
-                        icon={<CopyOutlined />} 
-                        onClick={() => copyToClipboard('51.38.187.245')}
-                        style={{ marginLeft: 8 }}
-                      />
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
-                      <Text strong>Port:</Text>
-                    </td>
-                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
-                      3306
-                      <Button 
-                        type="text" 
-                        icon={<CopyOutlined />} 
-                        onClick={() => copyToClipboard('3306')}
-                        style={{ marginLeft: 8 }}
-                      />
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
-                      <Text strong>Utilisateur:</Text>
-                    </td>
-                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
-                      looker_user
-                      <Button 
-                        type="text" 
-                        icon={<CopyOutlined />} 
-                        onClick={() => copyToClipboard('looker_user')}
-                        style={{ marginLeft: 8 }}
-                      />
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
-                      <Text strong>Mot de passe:</Text>
-                    </td>
-                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
-                      lokaszsh98@Datahive_looker
-                      <Button 
-                        type="text" 
-                        icon={<CopyOutlined />} 
-                        onClick={() => copyToClipboard('lokaszsh98@Datahive_looker')}
-                        style={{ marginLeft: 8 }}
-                      />
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+
+<table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 16 }}>
+  <tbody>
+    <tr>
+      <td style={{ padding: '8px', border: '1px solid #d9d9d9', width: '150px' }}>
+        <Text strong>Hôte MySQL:</Text>
+      </td>
+      <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
+        ****
+        <Button 
+          type="text" 
+          icon={<CopyOutlined />} 
+          onClick={() => copyToClipboard('51.38.187.245')}
+          style={{ marginLeft: 8 }}
+        />
+      </td>
+    </tr>
+    <tr>
+      <td style={{ padding: '8px', border: '1px solid #d9d9d9', width: '150px' }}>
+        <Text strong>Nom de la base :</Text>
+      </td>
+      <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
+        ****
+        <Button 
+          type="text" 
+          icon={<CopyOutlined />} 
+          onClick={() => copyToClipboard(dbName)}
+          style={{ marginLeft: 8 }}
+          disabled={!dbName}
+        />
+      </td>
+    </tr>
+    <tr>
+      <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
+        <Text strong>Port:</Text>
+      </td>
+      <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
+        ****
+        <Button 
+          type="text" 
+          icon={<CopyOutlined />} 
+          onClick={() => copyToClipboard('3306')}
+          style={{ marginLeft: 8 }}
+        />
+      </td>
+    </tr>
+    <tr>
+      <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
+        <Text strong>Utilisateur:</Text>
+      </td>
+      <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
+        ****
+        <Button 
+          type="text" 
+          icon={<CopyOutlined />} 
+          onClick={() => copyToClipboard('looker_user')}
+          style={{ marginLeft: 8 }}
+        />
+      </td>
+    </tr>
+    <tr>
+      <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
+        <Text strong>Mot de passe:</Text>
+      </td>
+      <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
+        ****
+        <Button 
+          type="text" 
+          icon={<CopyOutlined />} 
+          onClick={() => copyToClipboard('lokaszsh98@Datahive_looker')}
+          style={{ marginLeft: 8 }}
+        />
+      </td>
+    </tr>
+  </tbody>
+</table>
               
               <Alert
                 message="Instructions"
@@ -349,7 +384,7 @@ const MagicTemplate = () => {
                     <p>1. Dans Looker Studio, sélectionnez "Créer une source de données"</p>
                     <p>2. Choisissez le connecteur MySQL</p>
                     <p>3. Remplissez les champs avec les informations ci-dessus</p>
-                    <p>4. Le nom de votre base sera automatiquement détecté</p>
+                    <p>4. Cliquez sur "Authentifier"</p>
                   </>
                 }
                 type="info"

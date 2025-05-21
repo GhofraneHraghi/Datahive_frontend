@@ -104,7 +104,7 @@ const NavbarAdmin = ({ title = "Data Hive", onCollapse, onPageChange }) => {
         className={location.pathname === '/subscription-admin' ? 'menu-item-selected' : ''}
         style={getItemStyle('/subscription-admin')}
       >
-        <Link to="/subscription-admin" className="nav-link">Abonnement</Link>
+        <Link to="/subscription-admin" className="nav-link">Subscription</Link>
       </Menu.Item>
       
       <Menu.Item 
@@ -114,7 +114,7 @@ const NavbarAdmin = ({ title = "Data Hive", onCollapse, onPageChange }) => {
         className={location.pathname === '/users' ? 'menu-item-selected' : ''}
         style={getItemStyle('/users')}
       >
-        <Link to="/users" className="nav-link">Utilisateurs</Link>
+        <Link to="/users" className="nav-link">Employee</Link>
       </Menu.Item>
       
       <Menu.Item 
@@ -124,7 +124,7 @@ const NavbarAdmin = ({ title = "Data Hive", onCollapse, onPageChange }) => {
         className={location.pathname === '/settings' ? 'menu-item-selected' : ''}
         style={getItemStyle('/settings')}
       >
-        <Link to="/settings" className="nav-link">Paramètres</Link>
+        <Link to="/settings" className="nav-link">Settings</Link>
       </Menu.Item>
     </Menu>
   );
@@ -193,7 +193,7 @@ const NavbarAdmin = ({ title = "Data Hive", onCollapse, onPageChange }) => {
             onClick={handleSignOut}
             style={{ marginTop: '16px' }}
           >
-            Déconnexion
+            Sign Out
           </Button>
         </Drawer>
       </>

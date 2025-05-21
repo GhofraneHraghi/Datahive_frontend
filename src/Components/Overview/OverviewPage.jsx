@@ -172,7 +172,7 @@ const OverviewPage = () => {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Navbar title="BigDeal Analytics" onCollapse={handleCollapse} />
+      <Navbar onCollapse={handleCollapse} />
       <Content style={contentStyles}>
         {renderContent()}
       </Content>
