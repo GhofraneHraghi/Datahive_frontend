@@ -61,7 +61,7 @@ const SubscriptionAdmin = () => {
     try {
       setLoading(true);
       if (editPlan) {
-        const response = await axios.put(`${apiPlanUrl}/${editPlan.id}`, values);
+        const response = await axios.put(`${apiPlanUrl}/${editPlan.plan_id}`, values);
         setPlans(plans.map((p) => (p.id === editPlan.id ? response.data : p)));
         message.success("Plan mis à jour avec succès !");
       } else {

@@ -59,7 +59,7 @@ const SubscriptionPlans = () => {
       
       const response = await axios.post(
         `${VITE_BACKEND_BASE_URL}/api/create-checkout-session`,
-        { planId: plan.id },
+        { planId: plan.plan_id },
         {
           headers: { 
             'Content-Type': 'application/json',
