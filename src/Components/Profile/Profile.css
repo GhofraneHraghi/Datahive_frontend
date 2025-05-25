@@ -87,11 +87,11 @@
   
   /* Section abonnement */
   .subscription-badge-active {
-    background-color: #27ae60;
+    background-color: none;
   }
   
   .subscription-badge-inactive {
-    background-color: #e74c3c;
+    background-color: none;
   }
   
   /* Responsive */

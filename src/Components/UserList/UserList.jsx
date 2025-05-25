@@ -13,7 +13,7 @@ const { Content } = Layout;
 const { Column } = Table;
 
 const UsersList = () => {
-  const [employee, setEmployee] = useState([]);
+  const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
@@ -27,7 +27,6 @@ const UsersList = () => {
   const [editForm] = Form.useForm();
   const [addForm] = Form.useForm();
 
-  // Récupération de l'URL de base depuis les variables d'environnement Vite
   const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
   const handleSiderCollapse = (collapsed) => {
@@ -35,15 +34,13 @@ const UsersList = () => {
   };
 
   useEffect(() => {
-    fetchEmployee();
+    fetchEmployees();
   }, [page, limit]);
 
-  const fetchEmployee = async () => {
+  const fetchEmployees = async () => {
     try {
-      const response = await axios.get(`${VITE_BACKEND_BASE_URL}/api/employee`, {
-        params: { page, limit },
-      });
-      setEmployee(response.data);
+      const response = await axios.get(`${VITE_BACKEND_BASE_URL}/api/employee`);
+      setEmployees(response.data);
       setLoading(false);
     } catch (error) {
       console.error("Erreur lors du chargement des employés:", error);
@@ -53,48 +50,65 @@ const UsersList = () => {
 
   const handleEditClick = (employee) => {
     setEditingEmployee(employee);
-    editForm.setFieldsValue({ ...employee });
+    editForm.setFieldsValue({
+      first_name: employee.first_name_employee,
+      last_name: employee.last_name_employee,
+      email: employee.email_employee
+    });
     setIsEditModalVisible(true);
   };
 
   const handleUpdateEmployee = async (values) => {
-    try {
-      await axios.patch(`${VITE_BACKEND_BASE_URL}/api/employee/${editingEmployee.id}`, values);
-      message.success("Employé mis à jour avec succès !");
-      setIsEditModalVisible(false);
-      fetchEmployee();
-    } catch (error) {
-      console.error("Erreur lors de la mise à jour de l'employé:", error);
-      message.error("Erreur lors de la mise à jour.");
-    }
-  };
+  try {
+    await axios.patch(`${VITE_BACKEND_BASE_URL}/api/employee/${editingEmployee.employee_id}`, {
+      first_name_employee: values.first_name,
+      last_name_employee: values.last_name,
+      email_employee: values.email
+    });
+    message.success("Employé mis à jour avec succès !");
+    setIsEditModalVisible(false);
+    fetchEmployees();
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour de l'employé:", error);
+    message.error(error.response?.data?.error || "Erreur lors de la mise à jour.");
+  }
+};
 
-  const handleDeleteEmployee = async (employeeId) => {
-    try {
-      await axios.delete(`${VITE_BACKEND_BASE_URL}/api/employee/${employeeId}`);
-      message.success("Employé supprimé avec succès !");
-      fetchEmployee();
-    } catch (error) {
-      console.error("Erreur lors de la suppression de l'employé:", error);
-      message.error("Erreur lors de la suppression.");
+ const handleDeleteEmployee = async (employeeId) => {
+  try {
+    if (!employeeId) {
+      message.error("ID de l'employé manquant");
+      return;
     }
-  };
+    
+    await axios.delete(`${VITE_BACKEND_BASE_URL}/api/employee/${employeeId}`);
+    message.success("Employé supprimé avec succès !");
+    fetchEmployees();
+  } catch (error) {
+    console.error("Erreur lors de la suppression de l'employé:", error);
+    message.error(error.response?.data?.error || "Erreur lors de la suppression.");
+  }
+};
 
   const handleAddEmployee = async (values) => {
-    try {
-      await axios.post(`${VITE_BACKEND_BASE_URL}/api/employee`, values);
-      message.success("Employé ajouté avec succès. Un email a été envoyé avec les informations de connexion.");
-      addForm.resetFields();
-      setIsAddModalVisible(false);
-      fetchEmployee();
-    } catch (error) {
-      console.error("Erreur lors de l'ajout de l'employé:", error);
-      message.error("Erreur lors de l'ajout.");
-    }
-  };
+  try {
+    await axios.post(`${VITE_BACKEND_BASE_URL}/api/employee`, {
+      first_name: values.first_name,
+      last_name: values.last_name,
+      email: values.email
+    });
+    message.success("Employé ajouté avec succès. Un email a été envoyé avec les informations de connexion.");
+    addForm.resetFields();
+    setIsAddModalVisible(false);
+    fetchEmployees();
+  } catch (error) {
+    console.error("Erreur lors de l'ajout de l'employé:", error);
+    message.error(error.response?.data?.error || "Erreur lors de l'ajout.");
+  }
+};
 
-  const filteredEmployee = employee.filter((employee) =>
-    employee.first_name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredEmployees = employees.filter((employee) =>
+    employee.first_name_employee?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -122,18 +136,18 @@ const UsersList = () => {
               </Button>
             </Space>
 
-            <Table dataSource={filteredEmployee} loading={loading} rowKey="id">
+            <Table dataSource={filteredEmployees} loading={loading} rowKey="id">
               <Column title="ID" dataIndex="id" key="id" />
-              <Column title="Prénom" dataIndex="first_name" key="first_name" />
-              <Column title="Nom" dataIndex="last_name" key="last_name" />
-              <Column title="Email" dataIndex="email" key="email" />
+              <Column title="Prénom" dataIndex="first_name_employee" key="first_name_employee" />
+              <Column title="Nom" dataIndex="last_name_employee" key="last_name_employee" />
+              <Column title="Email" dataIndex="email_employee" key="email_employee" />
               <Column
                 title="Actions"
                 key="actions"
                 render={(_, record) => (
                   <Space>
                     <Button icon={<EditOutlined />} onClick={() => handleEditClick(record)} />
-                    <Button icon={<DeleteOutlined />} onClick={() => handleDeleteEmployee(record.id)} danger />
+                    <Button icon={<DeleteOutlined />} onClick={() => handleDeleteEmployee(record.employee_id)} danger />
                   </Space>
                 )}
               />

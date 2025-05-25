@@ -13,7 +13,7 @@ import {
   Spin,
   Divider
 } from 'antd';
-import { CopyOutlined } from '@ant-design/icons';
+import { CopyOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './Dashboard/Navbar';
 
@@ -32,25 +32,116 @@ const MagicTemplate = () => {
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [dbName, setDbName] = useState('');
+  const [initializing, setInitializing] = useState(true);
+  const [isEmptyTemplate, setIsEmptyTemplate] = useState(false);
+  const [needsTokenRefresh, setNeedsTokenRefresh] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  
   const navigate = useNavigate();
   const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
-  // Ajout d'un état pour savoir si le template est vide
-  const [isEmptyTemplate, setIsEmptyTemplate] = useState(false);
+  // Debug function to check token content
+  const debugToken = () => {
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+    
+    console.log('=== TOKEN DEBUG ===');
+    console.log('Token exists:', !!token);
+    console.log('Token length:', token?.length);
+    console.log('User data:', user);
+    
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        console.log('Token payload:', payload);
+        console.log('Tenant ID in token:', payload.tenant_id);
+      } catch (e) {
+        console.log('Cannot decode token:', e);
+      }
+    }
+  };
 
   useEffect(() => {
+    debugToken(); // Debug token content
     const token = localStorage.getItem('token');
     if (!token) {
       navigate('/login');
     } else {
-      fetchTemplates();
+      initializeData();
     }
-    fetchDbName();
   }, [navigate]);
 
-  const fetchDbName = async () => {
+  // Function to refresh token with updated tenant_id
+  const refreshToken = async () => {
+    setRefreshing(true);
+    try {
+      console.log('Refreshing token...');
+      const token = localStorage.getItem('token');
+      
+      const response = await axios.post(
+        `${VITE_BACKEND_BASE_URL}/api/refresh-token`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      // Update stored token and user data
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      localStorage.setItem('db_name', response.data.user.tenant_id ? 'updated' : '');
+      
+      console.log('Token refreshed successfully:', response.data);
+      setNeedsTokenRefresh(false);
+      
+      return response.data;
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('db_name');
+        navigate('/login');
+      }
+      throw error;
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const initializeData = async () => {
+    setInitializing(true);
+    try {
+      // Récupérer le db_name en premier
+      const dbName = await fetchDbName();
+      console.log('DB Name initialisé:', dbName);
+      
+      // Puis récupérer les templates
+      const templates = await fetchTemplates();
+      console.log('Templates initialisés:', templates?.length || 0);
+      
+    } catch (error) {
+      console.error('Erreur lors de l\'initialisation des données:', error);
+      if (error.response?.data?.needsRefresh) {
+        setNeedsTokenRefresh(true);
+      } else {
+        message.error('Erreur lors du chargement des données initiales');
+      }
+    } finally {
+      setInitializing(false);
+    }
+  };
+
+  const fetchDbName = async (retryCount = 0) => {
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Token manquant');
+      }
+
       const response = await axios.get(
         `${VITE_BACKEND_BASE_URL}/api/tenant-db`,
         {
@@ -60,16 +151,54 @@ const MagicTemplate = () => {
           }
         }
       );
+      
+      console.log('DB Name récupéré:', response.data.db_name);
       setDbName(response.data.db_name);
+      localStorage.setItem('db_name', response.data.db_name);
+      
+      return response.data.db_name;
     } catch (error) {
+      console.error('Erreur lors de la récupération du nom de la DB:', error);
+      
+      // Handle tenant not assigned error with auto-refresh
+      if (error.response?.data?.needsRefresh && retryCount === 0) {
+        console.log('Tenant not assigned, attempting token refresh...');
+        try {
+          await refreshToken();
+          return await fetchDbName(1); // Retry once after refresh
+        } catch (refreshError) {
+          console.error('Auto-refresh failed:', refreshError);
+        }
+      }
+      
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('db_name');
+        navigate('/login');
+        return;
+      }
+      
+      // Try to get from localStorage as fallback
+      const cachedDbName = localStorage.getItem('db_name');
+      if (cachedDbName && cachedDbName !== 'updated') {
+        setDbName(cachedDbName);
+        return cachedDbName;
+      }
+      
       setDbName('');
+      throw error;
     }
   };
 
-  const fetchTemplates = async () => {
+  const fetchTemplates = async (retryCount = 0) => {
     setLoadingTemplates(true);
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Token manquant');
+      }
+
       const response = await axios.get(
         `${VITE_BACKEND_BASE_URL}/api/looker-templates`,
         {
@@ -80,21 +209,50 @@ const MagicTemplate = () => {
         }
       );
       
+      console.log('Templates reçus:', response.data);
+      
       if (response.data?.templates && response.data.templates.length > 0) {
         setTemplates(response.data.templates);
-        setSelectedTemplate(response.data.templates[0].id);
-        // Vérifier si le premier template est vide
+        const firstTemplateId = response.data.templates[0].looker_id;
+        setSelectedTemplate(firstTemplateId);
+        
+        console.log('Premier template sélectionné:', firstTemplateId);
         checkIfEmptyTemplate(response.data.templates[0].template_data);
+        
+        return response.data.templates;
+      } else {
+        console.log('Aucun template trouvé ou structure de données incorrecte');
+        setTemplates([]);
+        setSelectedTemplate(null);
+        return [];
       }
     } catch (error) {
       console.error('Erreur de chargement des templates:', error);
-      message.error('Impossible de charger les templates de rapport');
+      
+      // Handle tenant not assigned error with auto-refresh
+      if (error.response?.data?.needsRefresh && retryCount === 0) {
+        console.log('Tenant not assigned, attempting token refresh...');
+        setNeedsTokenRefresh(true);
+        try {
+          await refreshToken();
+          return await fetchTemplates(1); // Retry once after refresh
+        } catch (refreshError) {
+          console.error('Auto-refresh failed:', refreshError);
+        }
+      }
       
       if (error.response?.status === 401) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        localStorage.removeItem('db_name');
         navigate('/login');
+        return [];
       }
+      
+      message.error('Impossible de charger les templates de rapport');
+      setTemplates([]);
+      setSelectedTemplate(null);
+      throw error;
     } finally {
       setLoadingTemplates(false);
     }
@@ -102,6 +260,11 @@ const MagicTemplate = () => {
 
   const checkIfEmptyTemplate = (templateData) => {
     try {
+      if (!templateData) {
+        setIsEmptyTemplate(true);
+        return;
+      }
+      
       const data = JSON.parse(templateData);
       setIsEmptyTemplate(Object.keys(data).length === 0);
     } catch {
@@ -122,6 +285,8 @@ const MagicTemplate = () => {
         navigate('/login');
         return;
       }
+      
+      console.log('Génération du lien avec templateId:', selectedTemplate);
       
       const response = await axios.get(
         `${VITE_BACKEND_BASE_URL}/api/looker-link`,
@@ -174,11 +339,51 @@ const MagicTemplate = () => {
   };
 
   const handleTemplateChange = (value) => {
+    console.log('Template sélectionné:', value);
     setSelectedTemplate(value);
-    const selected = templates.find(t => t.id === value);
+    const selected = templates.find(t => t.looker_id === value);
     if (selected) {
       checkIfEmptyTemplate(selected.template_data);
     }
+  };
+
+  // Manual refresh handler
+  const handleManualRefresh = async () => {
+    try {
+      setRefreshing(true);
+      await refreshToken();
+      await initializeData();
+      message.success('Données rafraîchies avec succès !');
+    } catch (error) {
+      message.error('Erreur lors du rafraîchissement');
+    }
+  };
+
+  // Render refresh alert when needed
+  const renderRefreshAlert = () => {
+    if (needsTokenRefresh || (templates.length === 0 && !loadingTemplates && !initializing)) {
+      return (
+        <Alert
+          message="Données non disponibles"
+          description="Vos informations de tenant ne sont pas à jour. Cliquez pour rafraîchir vos données."
+          type="warning"
+          showIcon
+          style={{ marginBottom: 20 }}
+          action={
+            <Button 
+              size="small" 
+              type="primary" 
+              icon={<ReloadOutlined />}
+              onClick={handleManualRefresh}
+              loading={refreshing}
+            >
+              Rafraîchir
+            </Button>
+          }
+        />
+      );
+    }
+    return null;
   };
 
   const steps = [
@@ -186,15 +391,17 @@ const MagicTemplate = () => {
       title: 'Choisir un template',
       content: (
         <div style={{ textAlign: 'center', margin: '40px 0' }}>
+          {renderRefreshAlert()}
+          
           <Card style={{ marginBottom: 20 }}>
             <Title level={4}>Sélectionnez un modèle de rapport</Title>
             <Paragraph>
               Choisissez parmi nos templates préconçus pour démarrer rapidement avec un rapport adapté à vos besoins.
             </Paragraph>
             
-            {loadingTemplates ? (
+            {loadingTemplates || initializing ? (
               <div style={{ textAlign: 'center', padding: '20px' }}>
-                <Spin tip="Chargement des templates..." />
+                <Spin tip={initializing ? "Initialisation..." : "Chargement des templates..."} />
               </div>
             ) : (
               <Select
@@ -206,14 +413,14 @@ const MagicTemplate = () => {
                 size="large"
               >
                 {templates.map(template => (
-                  <Option key={template.id} value={template.id}>
-                    {template.name} - {template.description}
+                  <Option key={template.looker_id} value={template.looker_id}>
+                    {template.looker_name} - {template.description}
                   </Option>
                 ))}
               </Select>
             )}
             
-            {templates.length === 0 && !loadingTemplates && (
+            {templates.length === 0 && !loadingTemplates && !initializing && !needsTokenRefresh && (
               <Alert
                 message="Aucun template disponible"
                 description="Contactez votre administrateur pour créer des templates de rapport."
@@ -229,7 +436,7 @@ const MagicTemplate = () => {
                 size="large"
                 onClick={fetchLookerLink}
                 loading={loading}
-                disabled={templates.length === 0 || !selectedTemplate}
+                disabled={initializing || templates.length === 0 || !selectedTemplate || !dbName || needsTokenRefresh}
               >
                 Générer mon rapport
               </Button>
@@ -237,12 +444,12 @@ const MagicTemplate = () => {
               <Button 
                 style={{ marginLeft: 16 }}
                 onClick={() => setCurrentStep(1)}
+                disabled={needsTokenRefresh}
               >
                 Passer à la configuration
               </Button>
             </div>
           </Card>
-        
         </div>
       ),
     },
@@ -276,7 +483,6 @@ const MagicTemplate = () => {
               </Paragraph>
               
               <ul style={{ marginBottom: 20 }}>
-
                 <li>Template préconfiguré selon votre choix</li>
                 <li>Tables et champs déjà sélectionnés</li>
               </ul>
@@ -301,81 +507,81 @@ const MagicTemplate = () => {
                 style={{ marginBottom: 20 }}
               />
 
-<table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 16 }}>
-  <tbody>
-    <tr>
-      <td style={{ padding: '8px', border: '1px solid #d9d9d9', width: '150px' }}>
-        <Text strong>Hôte MySQL:</Text>
-      </td>
-      <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
-        ****
-        <Button 
-          type="text" 
-          icon={<CopyOutlined />} 
-          onClick={() => copyToClipboard('51.38.187.245')}
-          style={{ marginLeft: 8 }}
-        />
-      </td>
-    </tr>
-    <tr>
-      <td style={{ padding: '8px', border: '1px solid #d9d9d9', width: '150px' }}>
-        <Text strong>Nom de la base :</Text>
-      </td>
-      <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
-        ****
-        <Button 
-          type="text" 
-          icon={<CopyOutlined />} 
-          onClick={() => copyToClipboard(dbName)}
-          style={{ marginLeft: 8 }}
-          disabled={!dbName}
-        />
-      </td>
-    </tr>
-    <tr>
-      <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
-        <Text strong>Port:</Text>
-      </td>
-      <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
-        ****
-        <Button 
-          type="text" 
-          icon={<CopyOutlined />} 
-          onClick={() => copyToClipboard('3306')}
-          style={{ marginLeft: 8 }}
-        />
-      </td>
-    </tr>
-    <tr>
-      <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
-        <Text strong>Utilisateur:</Text>
-      </td>
-      <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
-        ****
-        <Button 
-          type="text" 
-          icon={<CopyOutlined />} 
-          onClick={() => copyToClipboard('looker_user')}
-          style={{ marginLeft: 8 }}
-        />
-      </td>
-    </tr>
-    <tr>
-      <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
-        <Text strong>Mot de passe:</Text>
-      </td>
-      <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
-        ****
-        <Button 
-          type="text" 
-          icon={<CopyOutlined />} 
-          onClick={() => copyToClipboard('lokaszsh98@Datahive_looker')}
-          style={{ marginLeft: 8 }}
-        />
-      </td>
-    </tr>
-  </tbody>
-</table>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 16 }}>
+                <tbody>
+                  <tr>
+                    <td style={{ padding: '8px', border: '1px solid #d9d9d9', width: '150px' }}>
+                      <Text strong>Hôte MySQL:</Text>
+                    </td>
+                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
+                      ****
+                      <Button 
+                        type="text" 
+                        icon={<CopyOutlined />} 
+                        onClick={() => copyToClipboard('51.38.187.245')}
+                        style={{ marginLeft: 8 }}
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '8px', border: '1px solid #d9d9d9', width: '150px' }}>
+                      <Text strong>Nom de la base :</Text>
+                    </td>
+                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
+                      {dbName || '****'}
+                      <Button 
+                        type="text" 
+                        icon={<CopyOutlined />} 
+                        onClick={() => copyToClipboard(dbName)}
+                        style={{ marginLeft: 8 }}
+                        disabled={!dbName}
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
+                      <Text strong>Port:</Text>
+                    </td>
+                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
+                      ****
+                      <Button 
+                        type="text" 
+                        icon={<CopyOutlined />} 
+                        onClick={() => copyToClipboard('3306')}
+                        style={{ marginLeft: 8 }}
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
+                      <Text strong>Utilisateur:</Text>
+                    </td>
+                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
+                      ****
+                      <Button 
+                        type="text" 
+                        icon={<CopyOutlined />} 
+                        onClick={() => copyToClipboard('looker_user')}
+                        style={{ marginLeft: 8 }}
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
+                      <Text strong>Mot de passe:</Text>
+                    </td>
+                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
+                      ****
+                      <Button 
+                        type="text" 
+                        icon={<CopyOutlined />} 
+                        onClick={() => copyToClipboard('lokaszsh98@Datahive_looker')}
+                        style={{ marginLeft: 8 }}
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
               
               <Alert
                 message="Instructions"
@@ -475,10 +681,24 @@ const MagicTemplate = () => {
       >
         <Content style={{ margin: '24px 16px 0', overflow: 'initial' }}>
           <div style={{ padding: 24, background: '#fff', minHeight: 'calc(100vh - 112px)' }}>
-            <Title level={2}>Rapports Looker Studio</Title>
-            <Paragraph>
-              Créez et personnalisez facilement des rapports Looker Studio avec vos données.
-            </Paragraph>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div>
+                <Title level={2}>Rapports Looker Studio</Title>
+                <Paragraph>
+                  Créez et personnalisez facilement des rapports Looker Studio avec vos données.
+                </Paragraph>
+              </div>
+              
+              {/* Manual refresh button in header */}
+              <Button
+                icon={<ReloadOutlined />}
+                onClick={handleManualRefresh}
+                loading={refreshing}
+                type="default"
+              >
+                Actualiser
+              </Button>
+            </div>
             
             <Steps current={currentStep} style={{ margin: '40px 0' }}>
               {steps.map((item) => (

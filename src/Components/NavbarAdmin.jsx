@@ -252,8 +252,8 @@ const NavbarAdmin = ({ title = "Data Hive", onCollapse, onPageChange }) => {
               height: 48,
               padding: '0 16px'
             }}
-          >
-            {!collapsed && 'Déconnexion'}
+          > 
+            {!collapsed && 'Sign Out'}
           </Button>
         </Popconfirm>
       </div>

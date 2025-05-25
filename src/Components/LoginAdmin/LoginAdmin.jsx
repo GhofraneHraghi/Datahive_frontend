@@ -17,99 +17,104 @@ const LoginAdmin = () => {
   const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
   // Fonction utilitaire pour gérer la sauvegarde des données utilisateur de manière uniforme
-  const saveUserData = (data) => {
-    console.log("Données reçues du serveur:", data); // Débugage
-    
-    // Vérifier que les données essentielles existent
-    if (!data.employeeId && !data.token) {
-      console.error("ERREUR: Données d'authentification incomplètes", data);
-      antMessage.error("Erreur d'authentification: données incomplètes");
-      return false;
+const saveUserData = (data) => {
+  try {
+    if (!data?.token || !data?.employeeId) {
+      throw new Error("Données d'authentification invalides");
     }
-    
-    // Stocker les données importantes dans localStorage (méthode principale)
+
+    // Utilisez les mêmes noms de clés partout
     localStorage.setItem("token", data.token);
-    localStorage.setItem("employeeId", data.employeeId);
+    localStorage.setItem("employeeId", data.employeeId.toString());
     
     if (data.firstName) localStorage.setItem("firstName", data.firstName);
     if (data.lastName) localStorage.setItem("lastName", data.lastName);
     if (data.email) localStorage.setItem("email", data.email);
-    
-    // Maintenir la compatibilité avec sessionStorage
-    const employeeData = {
-      id: data.employeeId,
-      email: data.email || "",
-      firstName: data.firstName || "",
-      lastName: data.lastName || "",
-    };
-    
-    sessionStorage.setItem("currentemployee", JSON.stringify(employeeData));
-    
-    console.log("Authentification réussie - données sauvegardées:", {
-      token: data.token ? "présent" : "manquant",
-      employeeId: data.employeeId,
-      sessionStorage: JSON.stringify(employeeData)
+
+    return true;
+  } catch (error) {
+    console.error("Erreur saveUserData:", error);
+    antMessage.error("Erreur de sauvegarde des données");
+    return false;
+  }
+};
+
+const handleGoogleLogin = async () => {
+  setGoogleLoading(true);
+  try {
+    const user = await signInWithGoogle();
+    if (!user) throw new Error("Google auth failed");
+
+    const response = await Axios.post(
+      `${VITE_BACKEND_BASE_URL}/api/google-loginAdmin`,
+      { email: user.email }
+    );
+
+    console.log("API Response:", response.data); // Debug
+
+    if (response.data.token) {
+      // 1. Sauvegarde synchrone
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("employeeId", response.data.employeeId.toString());
+
+      // 2. Force un re-render avant navigation
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // 3. Deux méthodes de redirection (essayez les deux)
+      // Méthode A:
+      window.location.href = "/dashboard-admin";
+      
+      // OU Méthode B:
+      // navigate("/dashboard-admin", { replace: true, state: { from: "google-login" } });
+      
+      // 4. Debug supplémentaire
+      console.log("Redirection déclenchée vers /dashboard-admin");
+    }
+  } catch (err) {
+    console.error("Google login error:", {
+      error: err,
+      response: err.response?.data
+    });
+    antMessage.error(err.response?.data?.message || "Échec de la connexion Google");
+  } finally {
+    setGoogleLoading(false);
+  }
+};
+
+const onFinish = async (values) => {
+  setLoading(true);
+  try {
+    const response = await Axios.post(`${VITE_BACKEND_BASE_URL}/api/loginAdmin`, {
+      email: values.email,
+      password: values.password
     });
     
-    return true;
-  };
-
-  const onFinish = async (values) => {
-    setLoading(true);
-    try {
-      const response = await Axios.post(`${VITE_BACKEND_BASE_URL}/api/loginAdmin`, values);
-      console.log("Réponse login normal:", response.data);
+    if (response.data.token) {
+      const userData = {
+        token: response.data.token,
+        employeeId: response.data.employeeId,
+        firstName: response.data.firstName,
+        lastName: response.data.lastName,
+        email: response.data.email
+      };
       
-      if (response.data.token) {
-        if (saveUserData(response.data)) {
-          antMessage.success("Connexion réussie !");
-          navigate("/dashboard-admin");
-        }
+      if (saveUserData(userData)) {
+        antMessage.success("Connexion réussie !");
+        navigate("/dashboard-admin");
       }
-    } catch (err) {
-      console.error("Erreur login normal:", err.response?.data || err);
-      antMessage.error(err.response?.data?.message || "Erreur lors de la connexion");
-    } finally {
-      setLoading(false);
     }
-  };
+  } catch (err) {
+    const errorMessage = err.response?.data?.message || 
+                        (err.response?.data?.code === "EMPLOYEE_NOT_FOUND" 
+                          ? "Compte non trouvé. Contactez l'administrateur." 
+                          : "Erreur lors de la connexion");
+    antMessage.error(errorMessage);
+  } finally {
+    setLoading(false);
+  }
+};
 
-  const handleGoogleLogin = async () => {
-    setGoogleLoading(true);
-    try {
-      const user = await signInWithGoogle();
-      if (user) {
-        const response = await Axios.post(`${VITE_BACKEND_BASE_URL}/api/google-loginAdmin`, {
-          email: user.email,
-        });
-        
-        console.log("Réponse Google login:", response.data);
-        
-        if (response.data.token) {
-          // Structure normalisée pour tous les types de connexion
-          const userData = {
-            token: response.data.token,
-            employeeId: response.data.employeeId || (response.data.user && response.data.user.id),
-            firstName: response.data.firstName || (response.data.user && response.data.user.firstName),
-            lastName: response.data.lastName || (response.data.user && response.data.user.lastName),
-            email: response.data.email || (response.data.user && response.data.user.email) || user.email
-          };
-          
-          if (saveUserData(userData)) {
-            antMessage.success("Connexion Google réussie !");
-            navigate("/dashboard-admin");
-          }
-        }
-      }
-    } catch (err) {
-      console.error("Erreur Google login:", err.response?.data || err);
-      antMessage.error(
-        err.response?.data?.message || "Erreur lors de la connexion avec Google"
-      );
-    } finally {
-      setGoogleLoading(false);
-    }
-  };
+
 
   return (
     <div className="login-container">

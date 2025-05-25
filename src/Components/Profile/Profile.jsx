@@ -69,52 +69,65 @@ const Profile = () => {
   const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
   // Fetch user data on component mount
-  useEffect(() => {
-    const fetchUserData = async () => {
-      const token = localStorage.getItem("token");
-      const userId = JSON.parse(localStorage.getItem('user')).id;
+ // Dans le composant Profile.jsx, modifiez le useEffect existant
 
-      if (!token || !userId) {
-        message.error("Vous n'êtes pas connecté");
-        navigate("/login");
-        return;
-      }
+useEffect(() => {
+  const fetchUserData = async () => {
+    const token = localStorage.getItem("token");
+    const userId = JSON.parse(localStorage.getItem('user')).id;
 
-      try {
-        const response = await Axios.get(`${VITE_BACKEND_BASE_URL}/api/users/${userId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+    if (!token || !userId) {
+      message.error("Vous n'êtes pas connecté");
+      navigate("/login");
+      return;
+    }
 
-        setUserData(response.data);
+    try {
+      // Récupération des données de base de l'utilisateur
+      const userResponse = await Axios.get(`${VITE_BACKEND_BASE_URL}/api/users/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-        // Set initial form values
-        companyForm.setFieldsValue({
-          company: response.data.company,
-          number_of_employees: response.data.number_of_employees,
-        });
+      // Nouvelle requête pour les données d'abonnement
+      const subscriptionResponse = await Axios.get(`${VITE_BACKEND_BASE_URL}/api/user-data`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-        profileForm.setFieldsValue({
-          email: response.data.email,
-          first_name: response.data.first_name,
-          last_name: response.data.last_name,
-          country: response.data.country,
-          phone_number: response.data.phone_number,
-        });
+      // Fusion des données
+      const userData = {
+        ...userResponse.data,
+        subscription: subscriptionResponse.data.user.subscription
+      };
 
-        // Mettre à jour les états pour le numéro de téléphone et le pays
-        setPhone(response.data.phone_number || '');
-        setCountry(response.data.country || 'TN');
+      setUserData(userData);
 
-        setLoading(false);
-      } catch (error) {
-        message.error("Erreur lors du chargement des données utilisateur");
-        console.error(error);
-        setLoading(false);
-      }
-    };
+      // Set initial form values (reste inchangé)
+      companyForm.setFieldsValue({
+        company: userData.company,
+        number_of_employees: userData.number_of_employees,
+      });
 
-    fetchUserData();
-  }, [navigate, companyForm, profileForm]);
+      profileForm.setFieldsValue({
+        email: userData.email,
+        first_name: userData.first_name,
+        last_name: userData.last_name,
+        country: userData.country,
+        phone_number: userData.phone_number,
+      });
+
+      setPhone(userData.phone_number || '');
+      setCountry(userData.country || 'TN');
+
+      setLoading(false);
+    } catch (error) {
+      message.error("Erreur lors du chargement des données utilisateur");
+      console.error(error);
+      setLoading(false);
+    }
+  };
+
+  fetchUserData();
+}, [navigate, companyForm, profileForm]);
 
   // Handle company update
   const handleCompanyUpdate = async (values) => {
@@ -552,45 +565,48 @@ const handleProfileUpdate = async (values) => {
                 </Card>
 
                 {/* Subscription Section */}
-                <Card
-                  
-                  className="profile-card"
-                  title={
-                    <Title level={3}>
-                      <CreditCardOutlined /> Abonnement
-                    </Title>
-                  }
-                >
-                  <Row gutter={24} align="middle">
-                    <Col xs={24} sm={12}>
-                      <Text strong>Statut : </Text>
-                      {userData?.subscription?.status=== "active" ? (
-                        <Badge 
-                        className="subscription-badge-inactive"
-                        status="success" text="Actif" />
-                      ) : (
-                        <Badge 
-                        className="subscription-badge-inactive"
-                        status="error" text="Inactif" />
-                      )}
-                    </Col>
-                    <Col xs={24} sm={12}>
-                      <Text strong>Plan : </Text>
-                      <Text>{userData?.subscription?.plan_name || "Aucun plan actif"}</Text>
-                    </Col>
-                    {userData?.subscription?.expiration_date && (
-                      <Col xs={24} style={{ marginTop: 12 }}>
-                        <Text strong>Date dexpiration : </Text>
-                        <Text>{new Date(userData.subscription.expiration_date).toLocaleDateString()}</Text>
-                      </Col>
-                    )}
-                    <Col xs={24} style={{ marginTop: 20 }}>
-                      <Button type="primary" href="/subscription-plans">
-                        Gérer mon abonnement
-                      </Button>
-                    </Col>
-                  </Row>
-                </Card>
+               <Card
+                   className="profile-card"
+                        title={
+                            <Title level={3}>
+                                     <CreditCardOutlined /> Abonnement
+                            </Title>
+                               }
+>
+  <Row gutter={24} align="middle">
+    <Col xs={24} sm={12}>
+      <Text strong>Statut : </Text>
+      {userData?.subscription?.status === "active" ? (
+        <Badge 
+          className="subscription-badge-inactive"
+          status="success" 
+          text="Actif" 
+        />
+      ) : (
+        <Badge 
+          className="subscription-badge-inactive"
+          status="error" 
+          text="Inactif" 
+        />
+      )}
+    </Col>
+    <Col xs={24} sm={12}>
+      <Text strong>Plan : </Text>
+      <Text>{userData?.subscription?.plan?.name || "Aucun plan actif"}</Text>
+    </Col>
+    {userData?.subscription?.end_date && (
+      <Col xs={24} style={{ marginTop: 12 }}>
+        <Text strong>Date dexpiration : </Text>
+        <Text>{new Date(userData.subscription.end_date).toLocaleDateString()}</Text>
+      </Col>
+    )}
+    <Col xs={24} style={{ marginTop: 20 }}>
+      <Button type="primary" href="/subscription-plans">
+        Gérer mon abonnement
+      </Button>
+    </Col>
+  </Row>
+</Card>
               </>
             )}
           </div>

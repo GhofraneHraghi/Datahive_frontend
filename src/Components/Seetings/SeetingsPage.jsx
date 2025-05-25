@@ -8,7 +8,6 @@ import {
   message,
   Avatar,
   Upload,
-  Space,
   Layout,
   Divider,
   Spin
@@ -17,19 +16,19 @@ import {
   UserOutlined, 
   LockOutlined,
   MailOutlined,
-  EditOutlined,
   CameraOutlined,
   SaveOutlined
 } from '@ant-design/icons';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom'; // Ajout de l'import manquant
 import NavbarAdmin from '../NavbarAdmin';
 import './SeetingsPage.css';
 
 const { Title } = Typography;
 const { Content } = Layout;
-const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || '';
+const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL || 'http://localhost:3000';
 
-const SettingsPage = () => {
+const SeetingsPage = () => {
   const [form] = Form.useForm();
   const [profileForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -38,119 +37,88 @@ const SettingsPage = () => {
   const [imageUrl, setImageUrl] = useState(null);
   const [collapsed, setCollapsed] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
+  const navigate = useNavigate(); // Ajout du hook navigate
 
   useEffect(() => {
     fetchUserData();
   }, []);
 
-  const fetchUserData = async () => {
-    setPageLoading(true);
-    try {
-      // Get authentication data from localStorage
-      const token = localStorage.getItem('token');
-      const employeeId = localStorage.getItem('employeeId');
-      
-      // Debug logs
-      console.log('Token available:', !!token);
-      console.log('Employee ID:', employeeId);
-      
-      if (!token || !employeeId) {
-        message.error('Session expirée. Veuillez vous reconnecter.');
-        setPageLoading(false);
-        // Redirect to login page would be helpful here
-        // window.location.href = '/login-admin';
-        return;
-      }
-       
-      // Make sure the URL is constructed correctly
-      const apiUrl = `${VITE_BACKEND_BASE_URL}/api/employee/${employeeId}`;
-      console.log('API URL:', apiUrl);
-      
-      const response = await axios.get(apiUrl, {
-        headers: { 
+ // 2. Amélioration de fetchUserData pour mieux gérer les images
+const fetchUserData = async () => {
+  setPageLoading(true);
+  try {
+    const token = localStorage.getItem('token');
+    const employeeId = localStorage.getItem('employeeId');
+
+    if (!token || !employeeId) {
+      throw new Error('Authentification requise');
+    }
+
+    const response = await axios.get(
+      `${VITE_BACKEND_BASE_URL}/api/employee/${employeeId}`,
+      {
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
-      });
-      
-      console.log('API Response:', response.data);
-      setUserData(response.data);
-      
-      // Set form fields
-      profileForm.setFieldsValue({
-        firstName: response.data.firstName || response.data.first_name,
-        lastName: response.data.lastName || response.data.last_name,
-        email: response.data.email
-      });
-
-      if (response.data.profileImage) {
-        setImageUrl(response.data.profileImage);
       }
-    } catch (error) {
-      console.error('Erreur fetch data:', error);
+    );
+
+    console.log('Réponse brute de l\'API:', response.data);
+
+    const employeeData = {
+      id: response.data.id,
+      firstName: response.data.firstName || '',
+      lastName: response.data.lastName || '',
+      email: response.data.email || '',
+      profileImage: response.data.profileImage
+    };
+
+    console.log('Données employé:', employeeData);
+    setUserData(employeeData);
+    
+    // Mise à jour du formulaire
+    profileForm.setFieldsValue({
+      firstName: employeeData.firstName,
+      lastName: employeeData.lastName,
+      email: employeeData.email
+    });
+
+    // Gestion améliorée de l'image de profil
+    if (employeeData.profileImage) {
+      let imageUrl;
       
-      // Handle different error types
-      if (error.response) {
-        console.log('Error response status:', error.response.status);
-        console.log('Error response data:', error.response.data);
-        
-        if (error.response.status === 403) {
-          message.error('Accès non autorisé. Vos droits sont insuffisants ou votre session a expiré.');
-          // Consider clearing local storage and redirecting to login
-          localStorage.removeItem('token');
-          localStorage.removeItem('employeeId');
-          // window.location.href = '/login-admin';
-        } else if (error.response.status === 401) {
-          message.error('Session expirée. Veuillez vous reconnecter.');
-          // window.location.href = '/login-admin';
-        } else {
-          message.error('Erreur lors du chargement des données utilisateur');
-        }
+      if (employeeData.profileImage.startsWith('http')) {
+        imageUrl = employeeData.profileImage;
       } else {
-        message.error('Erreur de connexion au serveur');
+        // Nettoyage du chemin pour enlever tout préfixe indésirable
+        const cleanPath = employeeData.profileImage.replace(/^.*uploads\//, '');
+        imageUrl = `${VITE_BACKEND_BASE_URL}/uploads/${cleanPath}`;
       }
-    } finally {
-      setPageLoading(false);
-    }
-  };
-
-  const handlePasswordChange = async (values) => {
-    if (values.newPassword !== values.confirmPassword) {
-      message.error('Les mots de passe ne correspondent pas');
-      return;
+      
+      console.log('Image URL construite:', imageUrl);
+      setImageUrl(imageUrl);
+    } else {
+      setImageUrl(null);
     }
 
-    setLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      const employeeId = localStorage.getItem('employeeId');
-      
-      if (!token || !employeeId) {
-        message.error('Session expirée. Veuillez vous reconnecter.');
-        setLoading(false);
-        return;
-      }
-      
-      await axios.put(`${VITE_BACKEND_BASE_URL}/api/employee/${employeeId}/password`, {
-        currentPassword: values.currentPassword,
-        newPassword: values.newPassword
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      message.success('Mot de passe mis à jour avec succès');
-      form.resetFields();
-    } catch (error) {
-      console.error('Erreur password change:', error);
-      if (error.response?.status === 401) {
-        message.error('Mot de passe actuel incorrect');
-      } else {
-        message.error(error.response?.data?.message || 'Erreur lors de la mise à jour du mot de passe');
-      }
-    } finally {
-      setLoading(false);
+  } catch (error) {
+    console.error('Erreur complète:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status
+    });
+    
+    if (error.response?.status === 401) {
+      localStorage.clear();
+      navigate('/login');
+    } else {
+      message.error(error.response?.data?.message || 'Erreur de chargement des données');
     }
-  };
+  } finally {
+    setPageLoading(false);
+  }
+};
 
   const handleProfileUpdate = async (values) => {
     setProfileLoading(true);
@@ -160,69 +128,218 @@ const SettingsPage = () => {
       
       if (!token || !employeeId) {
         message.error('Session expirée. Veuillez vous reconnecter.');
-        setProfileLoading(false);
         return;
       }
       
-      await axios.put(`${VITE_BACKEND_BASE_URL}/api/employee/${employeeId}`, {
-        first_name: values.firstName,
-        last_name: values.lastName,
-        email: values.email
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.put(
+        `${VITE_BACKEND_BASE_URL}/api/employee/${employeeId}`,
+        {
+          first_name: values.firstName,
+          last_name: values.lastName
+        },
+        { 
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
       
       message.success('Profil mis à jour avec succès');
-      fetchUserData();
+      await fetchUserData(); // Recharger les données
     } catch (error) {
-      console.error('Erreur profile update:', error);
-      message.error(error.response?.data?.message || 'Erreur lors de la mise à jour du profil');
+      console.error('Erreur mise à jour profil:', error);
+      if (error.response?.status === 401) {
+        localStorage.clear();
+        navigate('/login');
+      } else {
+        message.error(error.response?.data?.message || 'Erreur lors de la mise à jour');
+      }
     } finally {
       setProfileLoading(false);
     }
   };
 
-  const handleImageUpload = async (file) => {
-    const formData = new FormData();
-    formData.append('image', file);
+  const handlePasswordChange = async (values) => {
+  if (values.newPassword !== values.confirmPassword) {
+    message.error('Les mots de passe ne correspondent pas');
+    return;
+  }
+
+  setLoading(true);
+  try {
+    const token = localStorage.getItem('token');
+    const employeeId = localStorage.getItem('employeeId');
     
-    try {
-      const token = localStorage.getItem('token');
-      const employeeId = localStorage.getItem('employeeId');
-      
-      if (!token || !employeeId) {
-        message.error('Session expirée. Veuillez vous reconnecter.');
-        return false;
-      }
-      
-      const response = await axios.post(
-        `${VITE_BACKEND_BASE_URL}/api/employee/${employeeId}/upload-image`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          }
-        }
-      );
-      
-      // Mettre à jour l'URL de l'image avec le chemin renvoyé par le backend
-      if (response.data.imagePath) {
-        setImageUrl(`${VITE_BACKEND_BASE_URL}/uploads/${response.data.imagePath}`);
-      }
-      message.success('Photo de profil mise à jour');
-    } catch (error) {
-      console.error('Erreur image upload:', error);
-      message.error('Erreur lors du téléchargement de l\'image');
+    // Add debugging
+    console.log('Token:', token ? 'Present' : 'Missing');
+    console.log('Employee ID:', employeeId);
+    console.log('Backend URL:', VITE_BACKEND_BASE_URL);
+    
+    if (!token || !employeeId) {
+      message.error('Session expirée. Veuillez vous reconnecter.');
+      return;
     }
-    return false; // Empêche le comportement par défaut de l'upload
-  };
+    
+    const response = await axios.put(
+      `${VITE_BACKEND_BASE_URL}/api/employee/${employeeId}/password`,
+      {
+        currentPassword: values.currentPassword,
+        newPassword: values.newPassword
+      }, 
+      {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    message.success('Mot de passe mis à jour avec succès');
+    form.resetFields();
+  } catch (error) {
+    console.error('Full error object:', error);
+    console.error('Error response:', error.response);
+    
+    if (error.response?.status === 401) {
+      message.error('Mot de passe actuel incorrect ou session expirée');
+      // Consider redirecting to login if token is invalid
+      // localStorage.clear();
+      // navigate('/login');
+    } else if (error.response?.status === 403) {
+      localStorage.clear();
+      navigate('/login');
+    } else {
+      message.error(error.response?.data?.message || 'Erreur lors de la mise à jour du mot de passe');
+    }
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleImageUpload = async (file) => {
+  console.log('=== FRONTEND IMAGE UPLOAD DEBUG ===');
+  console.log('File details:', {
+    name: file.name,
+    size: file.size,
+    type: file.type,
+    lastModified: file.lastModified
+  });
+
+  // Validation du fichier
+  const isImage = file.type.startsWith('image/');
+  if (!isImage) {
+    console.log('File is not an image:', file.type);
+    message.error('Vous ne pouvez télécharger que des fichiers image!');
+    return false;
+  }
+
+  const isLt2M = file.size / 1024 / 1024 < 2;
+  if (!isLt2M) {
+    console.log('File too large:', file.size / 1024 / 1024, 'MB');
+    message.error('L\'image doit être inférieure à 2MB!');
+    return false;
+  }
+
+  const formData = new FormData();
+  formData.append('image', file);
+  
+  try {
+    const token = localStorage.getItem('token');
+    const employeeId = localStorage.getItem('employeeId');
+    
+    console.log('Auth details:', {
+      token: token ? 'Present' : 'Missing',
+      employeeId: employeeId,
+      backendUrl: VITE_BACKEND_BASE_URL
+    });
+    
+    if (!token || !employeeId) {
+      message.error('Session expirée. Veuillez vous reconnecter.');
+      return false;
+    }
+    
+    const uploadUrl = `${VITE_BACKEND_BASE_URL}/api/employee/${employeeId}/upload-image`;
+    console.log('Upload URL:', uploadUrl);
+    
+    console.log('Making upload request...');
+    const response = await axios.post(uploadUrl, formData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    
+    console.log('Upload successful! Response:', response.data);
+    
+    if (response.data.imagePath) {
+      let newImageUrl;
+      
+      if (response.data.imagePath.startsWith('http')) {
+        newImageUrl = response.data.imagePath;
+      } else {
+        const cleanPath = response.data.imagePath.replace(/^.*uploads\//, '');
+        newImageUrl = `${VITE_BACKEND_BASE_URL}/uploads/${cleanPath}`;
+      }
+      
+      console.log('New image URL:', newImageUrl);
+      setImageUrl(newImageUrl);
+      message.success('Photo de profil mise à jour');
+      
+      // Rafraîchir les données
+      await fetchUserData();
+    }
+  } catch (error) {
+    console.error('=== UPLOAD ERROR DETAILS ===');
+    console.error('Error object:', error);
+    console.error('Response status:', error.response?.status);
+    console.error('Response data:', error.response?.data);
+    console.error('Response headers:', error.response?.headers);
+    
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      localStorage.clear();
+      navigate('/login');
+    } else {
+      const errorMessage = error.response?.data?.message || 'Erreur lors du téléchargement de l\'image';
+      const errorDetails = error.response?.data?.details;
+      
+      message.error(`${errorMessage}${errorDetails ? ` (${errorDetails})` : ''}`);
+    }
+  }
+  return false;
+};
+
+// Fonction pour tester la structure de la base de données (temporaire)
+const testDatabaseStructure = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.get(`${VITE_BACKEND_BASE_URL}/api/debug/employee-structure`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    console.log('Database structure:', response.data);
+  } catch (error) {
+    console.error('Error fetching DB structure:', error);
+  }
+};
+
+// Fonction pour tester les données employé (temporaire)
+const testEmployeeData = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const employeeId = localStorage.getItem('employeeId');
+    const response = await axios.get(`${VITE_BACKEND_BASE_URL}/api/debug/employee/${employeeId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    console.log('Employee raw data:', response.data);
+  } catch (error) {
+    console.error('Error fetching employee data:', error);
+  }
+};
 
   const handleCollapse = (collapsed) => {
     setCollapsed(collapsed);
   };
 
-  // Calculer la marge gauche dynamiquement en fonction de l'état du collapse
   const contentStyle = {
     marginLeft: collapsed ? '80px' : '250px',
     transition: 'all 0.2s ease',
@@ -236,7 +353,12 @@ const SettingsPage = () => {
       <Layout style={{ minHeight: '100vh' }}>
         <NavbarAdmin onCollapse={handleCollapse} />
         <Content style={contentStyle} className="settings-content">
-          <div className="loading-container">
+          <div className="loading-container" style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            height: '60vh' 
+          }}>
             <Spin size="large" tip="Chargement des données..." />
           </div>
         </Content>
@@ -249,14 +371,11 @@ const SettingsPage = () => {
       <NavbarAdmin onCollapse={handleCollapse} />
       
       <Content style={contentStyle} className="settings-content">
-        
-          <Title className="page-header">Paramètres du compte</Title>
-        
+        <Title level={2} className="page-header">Paramètres du compte</Title>
         
         <Card 
           title="Informations du profil" 
           className="profile-card" 
-          variant="bordered"
           style={{ marginBottom: 24, borderRadius: 12, boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)' }}
         >
           <div className="profile-container-centered">
@@ -301,6 +420,7 @@ const SettingsPage = () => {
                 <Input 
                   prefix={<UserOutlined />} 
                   className="modern-input" 
+                  placeholder="Entrez votre prénom"
                 />
               </Form.Item>
               
@@ -312,6 +432,7 @@ const SettingsPage = () => {
                 <Input 
                   prefix={<UserOutlined />} 
                   className="modern-input" 
+                  placeholder="Entrez votre nom"
                 />
               </Form.Item>
               
@@ -349,7 +470,6 @@ const SettingsPage = () => {
         <Card 
           title="Sécurité" 
           className="password-card" 
-          variant="bordered"
           style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)' }}
         >
           <Form
@@ -366,6 +486,7 @@ const SettingsPage = () => {
               <Input.Password 
                 prefix={<LockOutlined />} 
                 className="modern-input" 
+                placeholder="Mot de passe actuel"
               />
             </Form.Item>
             
@@ -380,6 +501,7 @@ const SettingsPage = () => {
               <Input.Password 
                 prefix={<LockOutlined />} 
                 className="modern-input" 
+                placeholder="Nouveau mot de passe"
               />
             </Form.Item>
             
@@ -402,6 +524,7 @@ const SettingsPage = () => {
               <Input.Password 
                 prefix={<LockOutlined />} 
                 className="modern-input" 
+                placeholder="Confirmer le nouveau mot de passe"
               />
             </Form.Item>
             
@@ -423,4 +546,4 @@ const SettingsPage = () => {
   );
 };
 
-export default SettingsPage;
+export default SeetingsPage;
