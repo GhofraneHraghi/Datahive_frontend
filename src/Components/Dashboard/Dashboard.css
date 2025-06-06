@@ -341,3 +341,38 @@
   font-size: 12px;
   margin-top: 4px;
 }
+.step-card {
+  margin-bottom: 24px;
+  border-radius: 8px;
+}
+
+.instruction-card {
+  margin-bottom: 24px;
+  background-color: #fafafa;
+}
+
+.step-navigation {
+  margin-top: 24px;
+  padding: 16px;
+  background: white;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.nav-button {
+  min-width: 100px;
+}
+
+.next-button {
+  margin-left: auto;
+}
+
+.prev-button {
+  margin-right: auto;
+}
+
+.email-copy-group {
+  margin-top: 16px;
+}

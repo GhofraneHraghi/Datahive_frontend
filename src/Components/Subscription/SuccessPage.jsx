@@ -12,44 +12,35 @@ import {
   Tag, 
   Card, 
   Divider,
-  Steps,
   Space,
-  Badge,
-  Avatar,
-  Statistic,
-  Progress,
-  Collapse,
-  theme,
   Row,
   Col,
-  Timeline
+  Steps,
+  Statistic,
+  Alert,
+  Badge,
+  Avatar
 } from 'antd';
 import { 
   CheckCircleOutlined, 
   LoadingOutlined, 
   ClockCircleOutlined,
-  FileTextOutlined,
-  UserOutlined,
-  CreditCardOutlined,
-  CalendarOutlined,
-  DollarOutlined,
   ArrowLeftOutlined,
   PrinterOutlined,
   SyncOutlined,
-  RocketOutlined,
-  LikeOutlined,
-  TrophyOutlined
+  UserOutlined,
+  CalendarOutlined,
+  CreditCardOutlined,
+  FileTextOutlined,
+  SafetyOutlined,
+  GiftOutlined
 } from '@ant-design/icons';
 import Navbar from "../Dashboard/Navbar";
-// Extraction correcte des composants de Layout
-const { Header, Footer, Sider, Content } = Layout;
-const { Title, Text, Paragraph } = Typography;
-const { Panel } = Collapse;
-const { useToken } = theme;
 
+const { Content } = Layout;
+const { Title, Text } = Typography;
 
 const SuccessPage = () => {
-  const { token } = useToken();
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -57,7 +48,6 @@ const SuccessPage = () => {
   const [subscriptionDetails, setSubscriptionDetails] = useState(null);
   const [navbarCollapsed, setNavbarCollapsed] = useState(false);
   const [userData, setUserData] = useState(null);
-  const [activePanel, setActivePanel] = useState(['1']);
   const sessionId = params.get('session_id');
 
   const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
@@ -186,52 +176,19 @@ const SuccessPage = () => {
   
   const getStatusTag = (status) => {
     const statusMap = {
-      'active': { color: 'green', text: 'Actif', icon: <CheckCircleOutlined /> },
-      'pending': { color: 'orange', text: 'En attente', icon: <ClockCircleOutlined /> },
-      'cancelled': { color: 'red', text: 'Annulé', icon: <ClockCircleOutlined /> },
-      'expired': { color: 'gray', text: 'Expiré', icon: <ClockCircleOutlined /> }
+      'active': { color: 'success', text: 'Actif', icon: <CheckCircleOutlined /> },
+      'pending': { color: 'warning', text: 'En attente', icon: <ClockCircleOutlined /> },
+      'cancelled': { color: 'error', text: 'Annulé', icon: <ClockCircleOutlined /> },
+      'expired': { color: 'default', text: 'Expiré', icon: <ClockCircleOutlined /> }
     };
     
-    const statusInfo = statusMap[status] || { color: 'blue', text: status, icon: null };
+    const statusInfo = statusMap[status] || { color: 'default', text: status, icon: null };
     
     return (
-      <Tag 
-        icon={statusInfo.icon} 
-        color={statusInfo.color}
-        style={{ 
-          borderRadius: 20,
-          padding: '4px 12px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          fontWeight: 'bold'
-        }}
-      >
+      <Tag color={statusInfo.color} icon={statusInfo.icon}>
         {statusInfo.text}
       </Tag>
     );
-  };
-  
-  const calculateProgress = () => {
-    if (!subscriptionDetails) return 0;
-    
-    const start = new Date(subscriptionDetails.subscription.start_date).getTime();
-    const end = new Date(subscriptionDetails.subscription.end_date).getTime();
-    const now = new Date().getTime();
-    
-    if (now >= end) return 100;
-    if (now <= start) return 0;
-    
-    return Math.round(((now - start) / (end - start)) * 100);
-  };
-
-  const getBenefitIcon = (index) => {
-    const icons = [
-      <RocketOutlined style={{fontSize: 24, color: token.colorPrimary}} />,
-      <LikeOutlined style={{fontSize: 24, color: token.colorPrimary}} />,
-      <TrophyOutlined style={{fontSize: 24, color: token.colorPrimary}} />
-    ];
-    return icons[index % icons.length];
   };
 
   if (loading) {
@@ -242,27 +199,24 @@ const SuccessPage = () => {
         alignItems: 'center', 
         height: '100vh',
         flexDirection: 'column',
-        gap: 16,
-        background: token.colorBgLayout
+        backgroundColor: '#f5f5f5'
       }}>
-        <Card
-          style={{
-            borderRadius: 16,
-            boxShadow: '0 8px 24px rgba(0,0,0,0.1)',
-            padding: 32,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexDirection: 'column',
-            width: 300
+        <Card 
+          style={{ 
+            textAlign: 'center', 
+            padding: '40px 20px',
+            borderRadius: '12px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
           }}
         >
           <Spin 
-            indicator={<LoadingOutlined style={{ fontSize: 48, color: token.colorPrimary }} spin />} 
+            indicator={<LoadingOutlined style={{ fontSize: 32, color: '#1890ff' }} spin />} 
           />
-          <Text strong style={{ fontSize: 18, marginTop: 24 }}>Vérification de votre abonnement...</Text>
-          <Text type="secondary" style={{ textAlign: 'center', marginTop: 8 }}>
-            Merci de patienter pendant que nous traitons votre paiement
+          <Title level={4} style={{ marginTop: 24, marginBottom: 8 }}>
+            Vérification en cours...
+          </Title>
+          <Text type="secondary">
+            Nous vérifions votre paiement, veuillez patienter
           </Text>
         </Card>
       </div>
@@ -270,397 +224,259 @@ const SuccessPage = () => {
   }
   
   return (
-    <Layout style={{ minHeight: '100vh', background: token.colorBgLayout }}>
+    <Layout style={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
       <Navbar onCollapse={(collapsed) => setNavbarCollapsed(collapsed)} />
       
       <Layout 
         style={{ 
           marginLeft: navbarCollapsed ? 80 : 250,
           transition: 'margin-left 0.2s ease-out',
-          background: token.colorBgLayout
+          backgroundColor: '#f5f5f5'
         }}
       >
-        <Content style={{ 
-          padding: '32px',
-          minHeight: 'calc(100vh - 64px)'
-        }}>
+        <Content style={{ padding: '24px' }}>
           {paymentStatus === 'paid' && subscriptionDetails ? (
-            <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-              {/* Header with back button */}
-              <Space style={{ marginBottom: 24 }}>
+            <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+              {/* En-tête avec bouton retour */}
+              <div style={{ marginBottom: 24 }}>
                 <Button 
                   type="default" 
                   icon={<ArrowLeftOutlined />} 
                   onClick={() => navigate('/dashboard')}
                   size="large"
-                  style={{
-                    borderRadius: 8,
-                    boxShadow: '0 2px 0 rgba(0,0,0,0.02)'
-                  }}
                 >
                   Retour au tableau de bord
                 </Button>
-              </Space>
+              </div>
               
-              {/* Success Card */}
-              <Card
-                bordered={false}
+              {/* Message de succès principal */}
+              <Card 
                 style={{ 
-                  borderRadius: 16,
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.06)',
-                  marginBottom: 32,
-                  overflow: 'hidden'
+                  marginBottom: 24, 
+                  borderRadius: '12px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                 }}
-                bodyStyle={{ padding: 0 }}
               >
-                <div style={{
-                  background: `linear-gradient(135deg, ${token.colorPrimary}, ${token.colorPrimaryActive})`,
-                  padding: '28px 32px',
-                  borderTopLeftRadius: 16,
-                  borderTopRightRadius: 16,
-                  color: '#fff'
-                }}>
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: 16,
-                  }}>
-                    <Badge 
-                      count={<CheckCircleOutlined style={{ color: '#fff', fontSize: 24 }} />}
-                      offset={[-10, 10]}
-                      style={{ backgroundColor: 'transparent' }}
-                    >
-                      <Avatar 
-                        size={72} 
-                        icon={<UserOutlined />} 
-                        style={{ 
-                          backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                          color: '#fff'
-                        }} 
-                      />
-                    </Badge>
-                    <div>
-                      <Title level={2} style={{ margin: 0, color: '#fff' }}>
-                        Merci pour votre abonnement !
-                      </Title>
-                      <Text style={{ color: 'rgba(255, 255, 255, 0.85)', fontSize: 16 }}>
-                        Votre paiement a été confirmé avec succès
-                      </Text>
-                    </div>
-                  </div>
-                </div>
-                
-                <div style={{ padding: '32px' }}>
-                  {/* Progress and Stats */}
-                  <Row gutter={[32, 32]}>
-                    <Col xs={24} md={14}>
-                      <Card 
-                        bordered={false} 
-                        style={{ 
-                          borderRadius: 12,
-                          height: '100%',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-                        }}
-                      >
-                        <div>
-                          <Text strong style={{ fontSize: 16, display: 'block', marginBottom: 16 }}>
-                            <CalendarOutlined style={{ marginRight: 8 }} />
-                            Progression de labonnement
-                          </Text>
-                          <Progress 
-                            percent={calculateProgress()} 
-                            strokeColor={{
-                              '0%': token.colorPrimary,
-                              '100%': token.colorPrimaryActive,
-                            }}
-                            strokeWidth={12}
-                            status="active"
-                          />
-                          <div style={{ 
-                            display: 'flex', 
-                            justifyContent: 'space-between',
-                            marginTop: 16
-                          }}>
-                            <div>
-                              <Text type="secondary">Début</Text>
-                              <Text strong style={{ display: 'block' }}>
-                                {formatDate(subscriptionDetails.subscription.start_date)}
-                              </Text>
-                            </div>
-                            <div style={{ textAlign: 'center' }}>
-                              <Text type="secondary">Durée</Text>
-                              <Text strong style={{ display: 'block' }}>
-                                {subscriptionDetails.plan.duration_days} jours
-                              </Text>
-                            </div>
-                            <div style={{ textAlign: 'right' }}>
-                              <Text type="secondary">Fin</Text>
-                              <Text strong style={{ display: 'block' }}>
-                                {formatDate(subscriptionDetails.subscription.end_date)}
-                              </Text>
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
-                    </Col>
-                    
-                    <Col xs={24} md={10}>
-                      <Card 
-                        bordered={false} 
-                        style={{ 
-                          borderRadius: 12,
-                          height: '100%',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-                        }}
-                      >
-                        <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                          <Statistic 
-                            title={<Text strong>Plan</Text>}
-                            value={subscriptionDetails.plan.name} 
-                            prefix={<FileTextOutlined style={{ color: token.colorPrimary }} />}
-                            valueStyle={{ color: token.colorTextHeading, fontWeight: 'bold' }}
-                          />
-                          
-                          <div>
-                            <Text type="secondary">Statut</Text>
-                            <div style={{ marginTop: 8 }}>
-                              {getStatusTag(subscriptionDetails.subscription.status)}
-                            </div>
-                          </div>
-                          
-                          <Statistic 
-                            title={<Text strong>Montant</Text>}
-                            prefix={<DollarOutlined style={{ color: token.colorSuccess }} />}
-                            value={parseFloat(subscriptionDetails.plan.price).toFixed(2)}
-                            suffix="€"
-                            valueStyle={{ color: token.colorSuccess, fontWeight: 'bold' }}
-                          />
-                        </Space>
-                      </Card>
-                    </Col>
-                  </Row>
-                  
-            <Row gutter={[32, 32]} style={{ marginTop: 32 }}>
-  <Col xs={24} md={16}>
-    <Card 
-      title={<Title level={4} style={{ margin: 0 }}>Détails de labonnement</Title>}
-      bordered={false} 
-      style={{ 
-        borderRadius: 12,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-      }}
-    >
-      {/* Nouveau design empilé */}
-      <Space direction="vertical" size={16} style={{ width: '100%' }}>
-        {/* Carte Client */}
-        <Card
-          bordered={false}
-          style={{ background: token.colorFillAlter }}
-          bodyStyle={{ padding: '16px 24px' }}
-        >
-          <Space size="middle" align="start">
-            <Avatar 
-              size={40} 
-              icon={<UserOutlined />} 
-              style={{ 
-                backgroundColor: token.colorPrimaryBg,
-                color: token.colorPrimary
-              }} 
-            />
-            <Space direction="vertical" size={4}>
-              <Text strong style={{ fontSize: 16 }}>
-                {subscriptionDetails.client.first_name} {subscriptionDetails.client.last_name}
-              </Text>
-              <Text type="secondary">{subscriptionDetails.client.email}</Text>
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                ID: {subscriptionDetails.client.id}
-              </Text>
-            </Space>
-          </Space>
-        </Card>
-
-        {/* Carte Période */}
-        <Card
-          bordered={false}
-          style={{ background: token.colorFillAlter }}
-          bodyStyle={{ padding: '16px 24px' }}
-        >
-          <Space size="middle" align="start">
-            <Avatar 
-              size={40} 
-              icon={<CalendarOutlined />} 
-              style={{ 
-                backgroundColor: token.colorPrimaryBg,
-                color: token.colorPrimary
-              }} 
-            />
-            <Space direction="vertical" size={4}>
-              <Text strong style={{ fontSize: 16 }}>Période dabonnement</Text>
-              <Space size={8}>
-                <Text>{formatDate(subscriptionDetails.subscription.start_date)}</Text>
-                <Text type="secondary">à</Text>
-                <Text>{formatDate(subscriptionDetails.subscription.end_date)}</Text>
-              </Space>
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                Durée: {subscriptionDetails.plan.duration_days} jours
-              </Text>
-            </Space>
-          </Space>
-        </Card>
-
-        {/* Carte Plan */}
-        <Card
-          bordered={false}
-          style={{ background: token.colorFillAlter }}
-          bodyStyle={{ padding: '16px 24px' }}
-        >
-          <Space size="middle" align="start">
-            <Avatar 
-              size={40} 
-              icon={<FileTextOutlined />} 
-              style={{ 
-                backgroundColor: token.colorPrimaryBg,
-                color: token.colorPrimary
-              }} 
-            />
-            <Space direction="vertical" size={4}>
-              <Text strong style={{ fontSize: 16 }}>Plan souscrit</Text>
-              <Text>{subscriptionDetails.plan.name}</Text>
-              <Space size={16}>
-                <Text type="secondary">
-                  Quota: {subscriptionDetails.plan.quota_limit} unités
-                </Text>
-                <Text type="secondary">
-                  Prix: {parseFloat(subscriptionDetails.plan.price).toFixed(2)}€
-                </Text>
-              </Space>
-            </Space>
-          </Space>
-        </Card>
-
-        {/* Carte Paiement */}
-        <Card
-          bordered={false}
-          style={{ background: token.colorFillAlter }}
-          bodyStyle={{ padding: '16px 24px' }}
-        >
-          <Space size="middle" align="start">
-            <Avatar 
-              size={40} 
-              icon={<CreditCardOutlined />} 
-              style={{ 
-                backgroundColor: token.colorPrimaryBg,
-                color: token.colorPrimary
-              }} 
-            />
-            <Space direction="vertical" size={4}>
-              <Text strong style={{ fontSize: 16 }}>Méthode de paiement</Text>
-              <Text>Carte bancaire (Stripe)</Text>
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                Référence: <Text copyable>{subscriptionDetails.subscription.stripe_session_id}</Text>
-              </Text>
-            </Space>
-          </Space>
-        </Card>
-      </Space>
-      
-      <Divider style={{ margin: '24px 0' }} />
-      
-      <div>
-        <Text strong style={{ fontSize: 16, display: 'block', marginBottom: 16 }}>
-          Étapes dactivation
-        </Text>
-        <Timeline
-          items={[
-            {
-              color: 'green',
-              children: (
-                <>
-                  <Text strong>Paiement confirmé</Text>
-                  <br />
-                  <Text type="secondary">Transaction complétée avec succès</Text>
-                </>
-              )
-            },
-            {
-              color: 'green',
-              children: (
-                <>
-                  <Text strong>Compte activé</Text>
-                  <br />
-                  <Text type="secondary">Votre abonnement est maintenant actif</Text>
-                </>
-              )
-            },
-            {
-              color: 'blue',
-              children: (
-                <>
-                  <Text strong>Profitez de nos services</Text>
-                  <br />
-                  <Text type="secondary">Explorez toutes les fonctionnalités disponibles</Text>
-                </>
-              )
-            }
-          ]}
-        />
-      </div>
-    </Card>
-  </Col>
-  
-  <Col xs={24} md={8}>
-    {/* Votre contenu supplémentaire ici */}
-  </Col>
-</Row>
-                  
-                  {/* Actions */}
-                  <div style={{ 
-                    marginTop: 32,
-                    display: 'flex',
-                    justifyContent: 'center',
-                    gap: 16
-                  }}>
-                    <Button 
-                      type="primary" 
-                      icon={<PrinterOutlined />}
-                      onClick={() => window.print()}
-                      size="large"
-                      style={{
-                        borderRadius: 8,
-                        height: 48,
-                        paddingLeft: 24,
-                        paddingRight: 24
-                      }}
-                    >
-                      Imprimer le reçu
-                    </Button>
-                    <Button 
-                      type="default"
-                      onClick={() => navigate('/dashboard')}
-                      size="large"
-                      style={{
-                        borderRadius: 8,
-                        height: 48,
-                        paddingLeft: 24,
-                        paddingRight: 24
-                      }}
-                    >
-                      Accéder au tableau de bord
-                    </Button>
-                  </div>
-                </div>
+                <Result
+                  status="success"
+                  title={
+                    <Title level={2} style={{ color: '#52c41a', marginBottom: 8 }}>
+                      🎉 Abonnement Activé Avec Succès!
+                    </Title>
+                  }
+                  subTitle={
+                    <Text style={{ fontSize: '16px' }}>
+                      Votre abonnement a été activé avec succès. Vous pouvez maintenant profiter de tous nos services premium.
+                    </Text>
+                  }
+                />
               </Card>
+
+              {/* Étapes de confirmation */}
+              <Card 
+                title={
+                  <Space>
+                    <SafetyOutlined />
+                    <span>Processus de confirmation</span>
+                  </Space>
+                }
+                style={{ 
+                  marginBottom: 24, 
+                  borderRadius: '12px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+                }}
+              >
+                <Steps
+                  current={2}
+                  items={[
+                    {
+                      title: 'Paiement',
+                      description: 'Transaction effectuée',
+                      status: 'finish',
+                      icon: <CreditCardOutlined />
+                    },
+                    {
+                      title: 'Vérification',
+                      description: 'Paiement confirmé',
+                      status: 'finish',
+                      icon: <CheckCircleOutlined />
+                    },
+                    {
+                      title: 'Activation',
+                      description: 'Compte activé',
+                      status: 'finish',
+                      icon: <GiftOutlined />
+                    }
+                  ]}
+                />
+              </Card>
+
+              <Row gutter={[24, 24]}>
+                {/* Informations du client */}
+                <Col xs={24} lg={12}>
+                  <Card 
+                    title={
+                      <Space>
+                        <Avatar icon={<UserOutlined />} style={{ backgroundColor: '#1890ff' }} />
+                        <span>Informations client</span>
+                      </Space>
+                    }
+                    style={{ 
+                      height: '100%',
+                      borderRadius: '12px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+                    }}
+                  >
+                    <Descriptions column={1} size="small">
+                      <Descriptions.Item label="Nom complet">
+                        <Text strong>
+                          {subscriptionDetails.client.first_name} {subscriptionDetails.client.last_name}
+                        </Text>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Email">
+                        <Text copyable>{subscriptionDetails.client.email}</Text>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="ID Client">
+                        <Text code>{subscriptionDetails.client.id}</Text>
+                      </Descriptions.Item>
+                    </Descriptions>
+                  </Card>
+                </Col>
+
+                {/* Détails du plan */}
+                <Col xs={24} lg={12}>
+                  <Card 
+                    title={
+                      <Space>
+                        <Avatar icon={<FileTextOutlined />} style={{ backgroundColor: '#52c41a' }} />
+                        <span>Détails du plan</span>
+                      </Space>
+                    }
+                    style={{ 
+                      height: '100%',
+                      borderRadius: '12px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+                    }}
+                  >
+                    <Space direction="vertical" style={{ width: '100%' }}>
+                      <div>
+                        <Text type="secondary">Plan souscrit</Text>
+                        <Title level={4} style={{ margin: '4px 0' }}>
+                          {subscriptionDetails.plan.name}
+                        </Title>
+                      </div>
+                      
+                      <Row gutter={16}>
+                        <Col span={12}>
+                          <Statistic 
+                            title="Prix" 
+                            value={parseFloat(subscriptionDetails.plan.price).toFixed(2)} 
+                            suffix="€"
+                            valueStyle={{ color: '#52c41a' }}
+                          />
+                        </Col>
+                        <Col span={12}>
+                          <Statistic 
+                            title="Quota" 
+                            value={subscriptionDetails.plan.quota_limit} 
+                            suffix="unités"
+                          />
+                        </Col>
+                      </Row>
+                    </Space>
+                  </Card>
+                </Col>
+
+                {/* Période d'abonnement */}
+                <Col xs={24} lg={12}>
+                  <Card 
+                    title={
+                      <Space>
+                        <Avatar icon={<CalendarOutlined />} style={{ backgroundColor: '#faad14' }} />
+                        <span>Période dabonnement</span>
+                      </Space>
+                    }
+                    style={{ 
+                      borderRadius: '12px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+                    }}
+                  >
+                    <Descriptions column={1} size="small">
+                      <Descriptions.Item label="Date de début">
+                        <Text strong>{formatDate(subscriptionDetails.subscription.start_date)}</Text>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Date de fin">
+                        <Text strong>{formatDate(subscriptionDetails.subscription.end_date)}</Text>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Durée">
+                        <Badge count={subscriptionDetails.plan.duration_days} showZero color="#1890ff" />
+                        <Text style={{ marginLeft: 8 }}>jours</Text>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Statut">
+                        {getStatusTag(subscriptionDetails.subscription.status)}
+                      </Descriptions.Item>
+                    </Descriptions>
+                  </Card>
+                </Col>
+
+                {/* Informations de paiement */}
+                <Col xs={24} lg={12}>
+                  <Card 
+                    title={
+                      <Space>
+                        <Avatar icon={<CreditCardOutlined />} style={{ backgroundColor: '#13c2c2' }} />
+                        <span>Informations de paiement</span>
+                      </Space>
+                    }
+                    style={{ 
+                      borderRadius: '12px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+                    }}
+                  >
+                    <Descriptions column={1} size="small">
+                      <Descriptions.Item label="Méthode">
+                        <Text>Carte bancaire (Stripe)</Text>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Référence">
+                        <Text copyable style={{ fontFamily: 'monospace', fontSize: '12px' }}>
+                          {subscriptionDetails.subscription.stripe_session_id}
+                        </Text>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Montant">
+                        <Text strong style={{ color: '#52c41a', fontSize: '16px' }}>
+                          {parseFloat(subscriptionDetails.plan.price).toFixed(2)} €
+                        </Text>
+                      </Descriptions.Item>
+                    </Descriptions>
+                  </Card>
+                </Col>
+              </Row>
+              
+              <Divider />
+
+              {/* Boutons d'action */}
+              <div style={{ textAlign: 'center', marginTop: 32 }}>
+                <Space size="large">
+                  <Button 
+                    type="primary" 
+                    icon={<PrinterOutlined />}
+                    onClick={() => window.print()}
+                    size="large"
+                  >
+                    Imprimer le reçu
+                  </Button>
+                  <Button 
+                    size="large"
+                    onClick={() => navigate('/dashboard')}
+                  >
+                    Accéder au tableau de bord
+                  </Button>
+                </Space>
+              </div>
             </div>
           ) : paymentStatus === 'error' ? (
-            <div style={{ maxWidth: 800, margin: '40px auto' }}>
-              <Card
-                bordered={false}
-                style={{ 
-                  borderRadius: 16,
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.06)',
-                  overflow: 'hidden'
-                }}
-              >
+            <div style={{ maxWidth: 600, margin: '0 auto' }}>
+              <Card style={{ borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
                 <Result
                   status="error"
                   title="Erreur de Vérification"
@@ -672,10 +488,6 @@ const SuccessPage = () => {
                       icon={<SyncOutlined />}
                       onClick={() => window.location.reload()}
                       size="large"
-                      style={{
-                        borderRadius: 8,
-                        height: 48
-                      }}
                     >
                       Réessayer
                     </Button>,
@@ -683,10 +495,6 @@ const SuccessPage = () => {
                       key="dashboard" 
                       onClick={() => navigate('/dashboard')}
                       size="large"
-                      style={{
-                        borderRadius: 8,
-                        height: 48
-                      }}
                     >
                       Retourner au Tableau de Bord
                     </Button>
@@ -695,17 +503,10 @@ const SuccessPage = () => {
               </Card>
             </div>
           ) : (
-            <div style={{ maxWidth: 800, margin: '40px auto' }}>
-              <Card
-                bordered={false}
-                style={{ 
-                  borderRadius: 16,
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.06)',
-                  overflow: 'hidden'
-                }}
-              >
+            <div style={{ maxWidth: 600, margin: '0 auto' }}>
+              <Card style={{ borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
                 <Result
-                  icon={<ClockCircleOutlined style={{ color: token.colorWarning }} />}
+                  icon={<ClockCircleOutlined style={{ color: '#faad14' }} />}
                   title="Paiement en Cours de Vérification"
                   subTitle="Votre abonnement est en cours de traitement. Veuillez patienter quelques instants."
                   extra={[
@@ -715,10 +516,6 @@ const SuccessPage = () => {
                       icon={<SyncOutlined />}
                       onClick={() => window.location.reload()}
                       size="large"
-                      style={{
-                        borderRadius: 8,
-                        height: 48
-                      }}
                     >
                       Actualiser
                     </Button>,
@@ -726,10 +523,6 @@ const SuccessPage = () => {
                       key="dashboard"
                       onClick={() => navigate('/dashboard')}
                       size="large"
-                      style={{
-                        borderRadius: 8,
-                        height: 48
-                      }}
                     >
                       Retourner au Tableau de Bord
                     </Button>

@@ -122,7 +122,7 @@ const Navbar = ({ title = "Data Hive", onCollapse, onPageChange }) => {
         className={location.pathname === '/dashboard' ? 'menu-item-selected' : ''}
         style={getItemStyle('/dashboard')}
       >
-        <Link to="/dashboard" className="nav-link">Dashboard</Link>
+        <Link to="/dashboard" className="nav-link">Tableau de bord</Link>
       </Menu.Item>
       
       {hasPermission('EDIT_PROFILE') && (
@@ -133,7 +133,7 @@ const Navbar = ({ title = "Data Hive", onCollapse, onPageChange }) => {
           className={location.pathname === '/profile' ? 'menu-item-selected' : ''}
           style={getItemStyle('/profile')}
         >
-          <Link to="/profile" className="nav-link">Profile</Link>
+          <Link to="/profile" className="nav-link">Profil</Link>
         </Menu.Item>
       )}
       
@@ -145,7 +145,7 @@ const Navbar = ({ title = "Data Hive", onCollapse, onPageChange }) => {
           className={location.pathname === '/manage-member' ? 'menu-item-selected' : ''}
           style={getItemStyle('/manage-member')}
         >
-          <Link to="/manage-member" className="nav-link">Manage Members</Link>
+          <Link to="/manage-member" className="nav-link">Gestion des membres</Link>
         </Menu.Item>
       )}
       
@@ -156,7 +156,7 @@ const Navbar = ({ title = "Data Hive", onCollapse, onPageChange }) => {
         className={location.pathname === '/magic-template' ? 'menu-item-selected' : ''}
         style={getItemStyle('/magic-template')}
       >
-        <Link to="/magic-template" className="nav-link">Magic Template</Link>
+        <Link to="/magic-template" className="nav-link">Template magique</Link>
       </Menu.Item>
       
       <Menu.Item 
@@ -166,7 +166,7 @@ const Navbar = ({ title = "Data Hive", onCollapse, onPageChange }) => {
         className={location.pathname === '/overview' ? 'menu-item-selected' : ''}
         style={getItemStyle('/overview')}
       >
-        <Link to="/overview" className="nav-link">Overview</Link>
+        <Link to="/overview" className="nav-link">Vue d'ensemble</Link>
       </Menu.Item>
       
       {hasPermission('EDIT_SUBSCRIPTION') && (
@@ -177,7 +177,7 @@ const Navbar = ({ title = "Data Hive", onCollapse, onPageChange }) => {
           className={location.pathname === '/subscription-plans' ? 'menu-item-selected' : ''}
           style={getItemStyle('/subscription-plans')}
         >
-          <Link to="/subscription-plans" className="nav-link">Subscription</Link>
+          <Link to="/subscription-plans" className="nav-link">Abonnement</Link>
         </Menu.Item>
       )}
     </Menu>
@@ -200,10 +200,10 @@ const Navbar = ({ title = "Data Hive", onCollapse, onPageChange }) => {
             </Title>
           </Space>
           <Popconfirm
-            title="Are you sure you want to sign out?"
+            title="Êtes-vous sûr de vouloir vous déconnecter?"
             onConfirm={handleSignOut}
-            okText="Yes"
-            cancelText="No"
+            okText="Oui"
+            cancelText="Non"
           >
             <Button 
               type="text" 
@@ -247,7 +247,7 @@ const Navbar = ({ title = "Data Hive", onCollapse, onPageChange }) => {
             onClick={handleSignOut}
             style={{ marginTop: '16px' }}
           >
-            Sign Out
+            Déconnexion
           </Button>
         </Drawer>
       </>
@@ -290,10 +290,10 @@ const Navbar = ({ title = "Data Hive", onCollapse, onPageChange }) => {
       <Divider className="sider-divider" style={{ backgroundColor: 'rgba(255,255,255,0.2)', margin: '16px 0' }} />
       <div style={{ padding: '0 16px 16px' }}>
         <Popconfirm
-          title="Are you sure you want to sign out?"
+          title="Êtes-vous sûr de vouloir vous déconnecter?"
           onConfirm={handleSignOut}
-          okText="Yes"
-          cancelText="No"
+          okText="Oui"
+          cancelText="Non"
           placement={collapsed ? 'right' : 'top'}
         >
           <Button 
@@ -307,7 +307,7 @@ const Navbar = ({ title = "Data Hive", onCollapse, onPageChange }) => {
               padding: '0 16px'
             }}
           >
-            {!collapsed && 'Sign Out'}
+            {!collapsed && 'Déconnexion'}
           </Button>
         </Popconfirm>
       </div>

@@ -4,10 +4,11 @@ import {
   message, Space, Progress, Alert, Modal
 } from 'antd';
 import {
-  CopyOutlined,  CloudOutlined, PlayCircleOutlined,
+  CopyOutlined, CloudOutlined, PlayCircleOutlined,
   ApiOutlined, CheckCircleOutlined, 
   InfoCircleOutlined, RocketOutlined,
-  ThunderboltOutlined,  CloseOutlined
+  ThunderboltOutlined, CloseOutlined,
+  SyncOutlined
 } from '@ant-design/icons';
 import { motion } from 'framer-motion';
 import axios from 'axios';
@@ -16,7 +17,7 @@ import Guide from './Guide';
 import Navbar from './Navbar';
 import './Dashboard.css';
 
-const {  Content, Footer, Sider } = Layout;
+const { Content, Footer, Sider } = Layout;
 const { Step } = Steps;
 const { Title, Text, Paragraph } = Typography;
 const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
@@ -37,6 +38,11 @@ const Dashboard = () => {
   const [messageApi, contextHolder] = message.useMessage();
   const [form] = Form.useForm();
   const navigate = useNavigate();
+  
+  // Nouvelles variables pour la gestion du tenant
+  const [tenantData, setTenantData] = useState(null);
+  const [isConfigurationExisting, setIsConfigurationExisting] = useState(false);
+  const [loadingTenantData, setLoadingTenantData] = useState(true);
   
   // Variables pour la navbar
   const [navbarCollapsed, setNavbarCollapsed] = useState(false);
@@ -62,6 +68,9 @@ const Dashboard = () => {
       // En cas de doute, vérifier à nouveau auprès du serveur
       checkSubscription();
     }
+    
+    // Charger les données du tenant
+    loadTenantData(user.id);
     
     setHasNotifications(Math.random() > 0.5);
     
@@ -111,6 +120,88 @@ const Dashboard = () => {
     }
   };
 
+  // Fonction pour récupérer les données du tenant
+  const loadTenantData = async (clientId) => {
+    try {
+      setLoadingTenantData(true);
+      const token = localStorage.getItem('token');
+      
+      console.log('Chargement des données tenant pour le client:', clientId);
+      
+      // D'abord, faire un appel de débogage pour vérifier la structure
+      try {
+        const debugResponse = await axios.get(
+          `${VITE_BACKEND_BASE_URL}/api/debug/client-tenant/${clientId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+        
+        console.log('Debug info:', debugResponse.data);
+      } catch (debugError) {
+        console.log('Debug failed:', debugError);
+      }
+      
+      // Ensuite, essayer de récupérer les données du tenant
+      const response = await axios.get(
+        `${VITE_BACKEND_BASE_URL}/api/tenant/${clientId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      console.log('Réponse de l\'API tenant:', response.data);
+      
+      if (response.data.success && response.data.data) {
+        const { bucket_uri, source_name, tenant_id } = response.data.data;
+        
+        setTenantData({
+          bucketUri: bucket_uri,
+          sourceName: source_name,
+          tenantId: tenant_id
+        });
+        
+        setBucketURI(bucket_uri || '');
+        setTenantName(source_name || '');
+        setIsConfigurationExisting(true);
+        
+        // Pré-remplir le formulaire
+        form.setFieldsValue({
+          bucketURI: bucket_uri || '',
+          tenantName: source_name || ''
+        });
+        
+        messageApi.success('Configuration existante chargée avec succès');
+      }
+      
+    } catch (error) {
+      console.log('Erreur lors du chargement des données tenant:', error);
+      
+      if (error.response) {
+        console.log('Status:', error.response.status);
+        console.log('Data:', error.response.data);
+        
+        if (error.response.status === 404) {
+          console.log('Aucune configuration existante trouvée - normal pour un nouveau client');
+        } else {
+          messageApi.warning('Impossible de récupérer la configuration existante');
+        }
+      }
+      
+      // Pas de configuration existante, c'est normal pour un nouveau client
+      setIsConfigurationExisting(false);
+      setTenantData(null);
+    } finally {
+      setLoadingTenantData(false);
+    }
+  };
+
   const handleCopy = () => {
     navigator.clipboard.writeText('test-google-play-console@pc-api-4722596725443039036-618.iam.gserviceaccount.com');
     messageApi.success('Email copié !', 2);
@@ -128,20 +219,74 @@ const Dashboard = () => {
 
       setLoading(true);
 
-      // Utilisation d'Axios au lieu de fetch pour plus de lisibilité
-      const response = await axios.post(`${VITE_BACKEND_BASE_URL}/api/process-bucket`, {
+      const requestData = {
         bucketURI,
         sourceName: tenantName,
         userId
-      });
+      };
+
+      const response = await axios.post(`${VITE_BACKEND_BASE_URL}/api/process-bucket`, requestData);
 
       messageApi.success(`Configuration réussie pour ${tenantName}`);
 
+      // Recharger les données après la création
+      await loadTenantData(userId);
+
       // Réinitialisation après succès
-      form.resetFields();
       setCurrentStep(0);
 
     } catch (error) {
+      messageApi.error(error.response?.data?.message || error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Nouvelle fonction pour synchroniser avec la configuration existante
+  const handleSyncWithExistingConfig = async () => {
+    try {
+      if (!tenantData) {
+        throw new Error('Aucune configuration existante trouvée');
+      }
+
+      setLoading(true);
+      setSyncStatus('syncing');
+      setSyncProgress(0);
+
+      const requestData = {
+        bucketURI: tenantData.bucketUri,
+        sourceName: tenantData.sourceName,
+        userId,
+        tenantId: tenantData.tenantId
+      };
+
+      // Simuler le progrès
+      const progressInterval = setInterval(() => {
+        setSyncProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return prev + 10;
+        });
+      }, 500);
+
+      const response = await axios.post(
+        `${VITE_BACKEND_BASE_URL}/api/process-bucket`,
+        requestData
+      );
+
+      clearInterval(progressInterval);
+      setSyncProgress(100);
+      
+      setTimeout(() => {
+        setSyncStatus('completed');
+        messageApi.success(`Synchronisation terminée pour ${tenantData.sourceName}`);
+      }, 500);
+
+    } catch (error) {
+      setSyncStatus('idle');
+      setSyncProgress(0);
       messageApi.error(error.response?.data?.message || error.message);
     } finally {
       setLoading(false);
@@ -152,52 +297,50 @@ const Dashboard = () => {
     setNavbarCollapsed(collapsed);
   };
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
   // Bouton pour ouvrir/fermer le guide (sidebar)
   const handleToggleGuide = () => {
     setGuideVisible((prev) => !prev);
   };
 
   const steps = [
-    {
-      title: 'Invitation',
-      icon: <ApiOutlined />,
-      content: (
-        <Card title="Étape 1: Inviter le compte" className="step-card">
-          <Paragraph>
-            Accordez laccès à votre Google Play Console en invitant notre compte de service.
-          </Paragraph>
-          <Card type="inner" className="instruction-card">
-            <ol className="feature-list">
-              <li>Connectez-vous à votre Google Play Console</li>
-              <li>Accédez à Utilisateurs et permissions</li>
-              <li>Invitez un nouvel utilisateur avec accès admin</li>
-              <li>Utilisez lemail ci-dessous</li>
-            </ol>
-          </Card>
-          <Form.Item label="Email d'invitation">
-            <Input.Group compact>
-              <Input
-                value="test-google-play-console@pc-api-4722596725443039036-618.iam.gserviceaccount.com"
-                readOnly
-                className="readonly-input"
-              />
-              <Button 
-                type="primary"
-                icon={<CopyOutlined />}
-                onClick={handleCopy}
-                className="copy-button"
-              >
-                Copier
-              </Button>
-            </Input.Group>
-          </Form.Item>
-        </Card>
-      ),
-    },
+{
+  title: 'Invitation',
+  icon: <ApiOutlined />,
+  content: (
+    <Card title="Étape 1: Inviter le compte" className="step-card">
+      <Paragraph>
+        Accordez l'accès à votre Google Play Console en invitant notre compte de service.
+      </Paragraph>
+      <Card type="inner" className="instruction-card">
+        <ol className="feature-list">
+          <li>Connectez-vous à votre Google Play Console</li>
+          <li>Accédez à Utilisateurs et permissions</li>
+          <li>Invitez un nouvel utilisateur avec accès admin</li>
+          <li>Utilisez l'email ci-dessous</li>
+        </ol>
+      
+        <Form.Item label="Email d'invitation">
+          <Input.Group compact className="email-copy-group">
+            <Button 
+              type="primary"
+              icon={<CopyOutlined />}
+              onClick={handleCopy}
+              style={{ width: '80px' }}
+            >
+              Copier
+            </Button>
+            <Input
+              value="test-google-play-console@pc-api-4722596725443039036-618.iam.gserviceaccount.com"
+              readOnly
+              className="readonly-input"
+              style={{ width: 'calc(100% - 80px)' }}
+            />
+          </Input.Group>
+        </Form.Item>
+      </Card>
+    </Card>
+  ),
+},
     {
       title: 'Configuration GCS',
       icon: <CloudOutlined />,
@@ -206,7 +349,7 @@ const Dashboard = () => {
           <Paragraph>
             Indiquez ladresse de votre bucket Google Cloud Storage pour recevoir les données synchronisées.
           </Paragraph>
-          <Form layout="vertical">
+          <Form layout="vertical" form={form}>
             <Form.Item
               label="URI GCS"
               name="bucketURI"
@@ -217,7 +360,7 @@ const Dashboard = () => {
                 value={bucketURI}
                 onChange={(e) => setBucketURI(e.target.value)}
                 prefix={<CloudOutlined />}
-                disabled={!hasActivePlan}
+                disabled={!hasActivePlan || isConfigurationExisting}
               />
             </Form.Item>
           </Form>
@@ -228,6 +371,7 @@ const Dashboard = () => {
             showIcon
             style={{ marginBottom: 16 }}
           />
+      
         </Card>
       ),
     },
@@ -237,9 +381,12 @@ const Dashboard = () => {
       content: (
         <Card title="Étape 3: Nommez votre source de données" className="step-card">
           <Paragraph>
-            Identifiez cette source de données avec un nom significatif pour vos rapports.
+            {isConfigurationExisting 
+              ? 'Le nom de votre source de données est défini et ne peut pas être modifié.'
+              : 'Identifiez cette source de données avec un nom significatif pour vos rapports.'
+            }
           </Paragraph>
-          <Form layout="vertical">
+          <Form layout="vertical" form={form}>
             <Form.Item
               label="Nom de la source"
               name="tenantName"
@@ -249,7 +396,7 @@ const Dashboard = () => {
                 placeholder="ex. MonApp-Production"
                 value={tenantName}
                 onChange={(e) => setTenantName(e.target.value)}
-                disabled={!hasActivePlan}
+                disabled={!hasActivePlan || isConfigurationExisting} // Toujours désactivé si config existante
               />
             </Form.Item>
           </Form>
@@ -274,24 +421,43 @@ const Dashboard = () => {
               <Card className="success-card">
                 <Space direction="vertical" size="middle">
                   <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 24 }} />
-                  <Text strong>Configuration terminée avec succès !</Text>
+                  <Text strong>Synchronisation terminée avec succès !</Text>
                 </Space>
               </Card>
             </motion.div>
           )}
 
-          <Button
-            type="primary"
-            onClick={handleSubmit}
-            loading={loading}
-            block
-            size="large"
-            icon={<ThunderboltOutlined />}
-            className="submit-button"
-            disabled={!hasActivePlan}
-          >
-            Terminer la configuration
-          </Button>
+          <Space direction="vertical" style={{ width: '100%' }}>
+            {/* Boutons pour configuration existante */}
+            {isConfigurationExisting && (
+              <Button
+                type="primary"
+                onClick={handleSyncWithExistingConfig}
+                loading={loading}
+                size="large"
+                icon={<SyncOutlined />}
+                className="sync-button"
+                disabled={!hasActivePlan}
+              >
+                Synchroniser les données
+              </Button>
+            )}
+
+            {/* Bouton pour nouvelle configuration */}
+            {!isConfigurationExisting && (
+              <Button
+                type="primary"
+                onClick={handleSubmit}
+                loading={loading}
+                size="large"
+                icon={<ThunderboltOutlined />}
+                className="submit-button"
+                disabled={!hasActivePlan}
+              >
+                Terminer la configuration
+              </Button>
+            )}
+          </Space>
         </Card>
       ),
     },
@@ -304,6 +470,25 @@ const Dashboard = () => {
     }
   }, []);
 
+  // Affichage de chargement pendant la récupération des données du tenant
+  if (loadingTenantData) {
+    return (
+      <Layout className="dashboard-layout">
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '100vh' 
+        }}>
+          <Space direction="vertical" align="center">
+            <Progress type="circle" percent={75} />
+            <Text>Chargement de votre configuration...</Text>
+          </Space>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout className="dashboard-layout">
       {contextHolder}
@@ -311,7 +496,7 @@ const Dashboard = () => {
       {/* Navbar importée */}
       <Navbar 
         onCollapse={handleNavbarCollapse} 
-        onPageChange={handlePageChange}
+        
       />
 
       <Layout
@@ -367,10 +552,19 @@ const Dashboard = () => {
               <Card bordered={false}>
                 <Row align="middle" gutter={[24, 24]}>
                   <Col span={24}>
-                    <Title level={3}>Synchronisation Google Play</Title>
+                    <Title level={3}>
+                      Synchronisation Google Play
+                      {isConfigurationExisting && (
+                        <Text type="secondary" style={{ fontSize: '16px', marginLeft: '10px' }}>
+                          - Configuration existante
+                        </Text>
+                      )}
+                    </Title>
                     <Paragraph type="secondary">
-                      Connectez votre Google Play Console pour synchroniser automatiquement 
-                      les données analytiques et de vente vers votre Google Cloud Storage.
+                      {isConfigurationExisting 
+                        ? 'Votre configuration existante est affichée ci-dessous. Vous pouvez synchroniser vos données avec la configuration actuelle.'
+                        : 'Connectez votre Google Play Console pour synchroniser automatiquement les données analytiques et de vente vers votre Google Cloud Storage.'
+                      }
                     </Paragraph>
                   </Col>
                 </Row>
@@ -435,7 +629,7 @@ const Dashboard = () => {
 
         <Footer className="dashboard-footer">
           <Text type="secondary">
-            Synchronisation Google Play © {new Date().getFullYear()} - BigDeal Analytics
+            Synchronisation Google Play © {new Date().getFullYear()} - Data Hive
           </Text>
         </Footer>
       </Layout>

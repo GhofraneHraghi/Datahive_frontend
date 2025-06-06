@@ -5,64 +5,140 @@ import {
   message, 
   Layout, 
   Card, 
-  Steps, 
   Typography, 
   Alert, 
-  Collapse, 
-  Select, 
   Spin,
-  Divider
+  Divider,
+  Space,
+  Tooltip,
+  Empty
 } from 'antd';
-import { CopyOutlined, ReloadOutlined } from '@ant-design/icons';
+import { 
+  ReloadOutlined, 
+  LeftOutlined,
+  RightOutlined,
+  DashboardOutlined,
+  QuestionCircleOutlined,
+  PlayCircleOutlined,
+  EditOutlined,
+  InfoCircleOutlined
+} from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './Dashboard/Navbar';
+import Guide from './Guide'; // Import du composant Guide
 
 const { Content } = Layout;
-const { Step } = Steps;
 const { Title, Text, Paragraph } = Typography;
-const { Panel } = Collapse;
-const { Option } = Select;
+
+// Configuration des couleurs
+const BLUE_COLOR = '#1890ff';
 
 const MagicTemplate = () => {
   const [loading, setLoading] = useState(false);
-  const [debugInfo, setDebugInfo] = useState(null);
   const [collapsed, setCollapsed] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
+  
+  // États pour les templates récupérés depuis l'API
   const [templates, setTemplates] = useState([]);
+  const [templatesLoading, setTemplatesLoading] = useState(true);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
-  const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const [currentTemplateIndex, setCurrentTemplateIndex] = useState(0);
+  
   const [dbName, setDbName] = useState('');
   const [initializing, setInitializing] = useState(true);
-  const [isEmptyTemplate, setIsEmptyTemplate] = useState(false);
   const [needsTokenRefresh, setNeedsTokenRefresh] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  
+  // États pour le guide
+  const [guideVisible, setGuideVisible] = useState(false);
   
   const navigate = useNavigate();
   const VITE_BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_BASE_URL;
 
-  // Debug function to check token content
-  const debugToken = () => {
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
-    
-    console.log('=== TOKEN DEBUG ===');
-    console.log('Token exists:', !!token);
-    console.log('Token length:', token?.length);
-    console.log('User data:', user);
-    
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        console.log('Token payload:', payload);
-        console.log('Tenant ID in token:', payload.tenant_id);
-      } catch (e) {
-        console.log('Cannot decode token:', e);
+  // Fonction pour récupérer les templates depuis l'API
+  const fetchTemplates = async () => {
+    setTemplatesLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Token manquant');
       }
+
+      const response = await axios.get(
+        `${VITE_BACKEND_BASE_URL}/api/looker-templates`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      console.log('Templates récupérés:', response.data.templates);
+      
+      // Traiter les templates pour extraire les données
+      const processedTemplates = response.data.templates.map(template => {
+        let templateData;
+        try {
+          // Parser le template_data s'il est en JSON
+          templateData = typeof template.template_data === 'string' 
+            ? JSON.parse(template.template_data) 
+            : template.template_data;
+        } catch (error) {
+          console.error('Erreur parsing template_data:', error);
+          templateData = { embedUrl: template.template_data };
+        }
+
+        return {
+          id: template.looker_id,
+          name: template.looker_name,
+          description: template.description,
+          embedUrl: templateData.embedUrl || templateData.reportTemplate || template.template_data,
+          color: BLUE_COLOR
+        };
+      });
+
+      setTemplates(processedTemplates);
+      
+      // Sélectionner le premier template par défaut
+      if (processedTemplates.length > 0) {
+        setSelectedTemplate(processedTemplates[0]);
+        setCurrentTemplateIndex(0);
+      }
+
+    } catch (error) {
+      console.error('Erreur lors du chargement des templates:', error);
+      message.error('Erreur lors du chargement des templates');
+      
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('db_name');
+        navigate('/login');
+      }
+    } finally {
+      setTemplatesLoading(false);
     }
   };
 
+  // Navigation entre les templates
+  const navigateTemplate = (direction) => {
+    if (templates.length === 0) return;
+    
+    const newIndex = direction === 'next' 
+      ? (currentTemplateIndex + 1) % templates.length
+      : (currentTemplateIndex - 1 + templates.length) % templates.length;
+    
+    setCurrentTemplateIndex(newIndex);
+    setSelectedTemplate(templates[newIndex]);
+  };
+
+  // Sélection directe d'un template
+  const selectTemplate = (template, index) => {
+    setSelectedTemplate(template);
+    setCurrentTemplateIndex(index);
+  };
+
   useEffect(() => {
-    debugToken(); // Debug token content
     const token = localStorage.getItem('token');
     if (!token) {
       navigate('/login');
@@ -75,7 +151,6 @@ const MagicTemplate = () => {
   const refreshToken = async () => {
     setRefreshing(true);
     try {
-      console.log('Refreshing token...');
       const token = localStorage.getItem('token');
       
       const response = await axios.post(
@@ -89,14 +164,11 @@ const MagicTemplate = () => {
         }
       );
       
-      // Update stored token and user data
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       localStorage.setItem('db_name', response.data.user.tenant_id ? 'updated' : '');
       
-      console.log('Token refreshed successfully:', response.data);
       setNeedsTokenRefresh(false);
-      
       return response.data;
     } catch (error) {
       console.error('Token refresh failed:', error);
@@ -115,14 +187,12 @@ const MagicTemplate = () => {
   const initializeData = async () => {
     setInitializing(true);
     try {
-      // Récupérer le db_name en premier
-      const dbName = await fetchDbName();
-      console.log('DB Name initialisé:', dbName);
-      
-      // Puis récupérer les templates
-      const templates = await fetchTemplates();
-      console.log('Templates initialisés:', templates?.length || 0);
-      
+      // Charger les templates et les données DB en parallel
+      await Promise.all([
+        fetchTemplates(),
+        fetchDbName()
+      ]);
+      console.log('Données initialisées avec succès');
     } catch (error) {
       console.error('Erreur lors de l\'initialisation des données:', error);
       if (error.response?.data?.needsRefresh) {
@@ -152,20 +222,17 @@ const MagicTemplate = () => {
         }
       );
       
-      console.log('DB Name récupéré:', response.data.db_name);
       setDbName(response.data.db_name);
       localStorage.setItem('db_name', response.data.db_name);
-      
       return response.data.db_name;
     } catch (error) {
       console.error('Erreur lors de la récupération du nom de la DB:', error);
       
-      // Handle tenant not assigned error with auto-refresh
       if (error.response?.data?.needsRefresh && retryCount === 0) {
         console.log('Tenant not assigned, attempting token refresh...');
         try {
           await refreshToken();
-          return await fetchDbName(1); // Retry once after refresh
+          return await fetchDbName(1);
         } catch (refreshError) {
           console.error('Auto-refresh failed:', refreshError);
         }
@@ -179,7 +246,6 @@ const MagicTemplate = () => {
         return;
       }
       
-      // Try to get from localStorage as fallback
       const cachedDbName = localStorage.getItem('db_name');
       if (cachedDbName && cachedDbName !== 'updated') {
         setDbName(cachedDbName);
@@ -191,90 +257,8 @@ const MagicTemplate = () => {
     }
   };
 
-  const fetchTemplates = async (retryCount = 0) => {
-    setLoadingTemplates(true);
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Token manquant');
-      }
-
-      const response = await axios.get(
-        `${VITE_BACKEND_BASE_URL}/api/looker-templates`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-      
-      console.log('Templates reçus:', response.data);
-      
-      if (response.data?.templates && response.data.templates.length > 0) {
-        setTemplates(response.data.templates);
-        const firstTemplateId = response.data.templates[0].looker_id;
-        setSelectedTemplate(firstTemplateId);
-        
-        console.log('Premier template sélectionné:', firstTemplateId);
-        checkIfEmptyTemplate(response.data.templates[0].template_data);
-        
-        return response.data.templates;
-      } else {
-        console.log('Aucun template trouvé ou structure de données incorrecte');
-        setTemplates([]);
-        setSelectedTemplate(null);
-        return [];
-      }
-    } catch (error) {
-      console.error('Erreur de chargement des templates:', error);
-      
-      // Handle tenant not assigned error with auto-refresh
-      if (error.response?.data?.needsRefresh && retryCount === 0) {
-        console.log('Tenant not assigned, attempting token refresh...');
-        setNeedsTokenRefresh(true);
-        try {
-          await refreshToken();
-          return await fetchTemplates(1); // Retry once after refresh
-        } catch (refreshError) {
-          console.error('Auto-refresh failed:', refreshError);
-        }
-      }
-      
-      if (error.response?.status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        localStorage.removeItem('db_name');
-        navigate('/login');
-        return [];
-      }
-      
-      message.error('Impossible de charger les templates de rapport');
-      setTemplates([]);
-      setSelectedTemplate(null);
-      throw error;
-    } finally {
-      setLoadingTemplates(false);
-    }
-  };
-
-  const checkIfEmptyTemplate = (templateData) => {
-    try {
-      if (!templateData) {
-        setIsEmptyTemplate(true);
-        return;
-      }
-      
-      const data = JSON.parse(templateData);
-      setIsEmptyTemplate(Object.keys(data).length === 0);
-    } catch {
-      setIsEmptyTemplate(false);
-    }
-  };
-
-  const fetchLookerLink = async () => {
+  const fetchLookerLink = async (useTemplate = false) => {
     setLoading(true);
-    setDebugInfo(null);
     
     try {
       const token = localStorage.getItem('token');
@@ -286,13 +270,22 @@ const MagicTemplate = () => {
         return;
       }
       
-      console.log('Génération du lien avec templateId:', selectedTemplate);
+      if (useTemplate && !selectedTemplate) {
+        message.error('Aucun template sélectionné');
+        return;
+      }
+      
+      console.log('Demande de lien Looker:', {
+        useTemplate,
+        templateId: useTemplate ? selectedTemplate.id : 'blank'
+      });
       
       const response = await axios.get(
         `${VITE_BACKEND_BASE_URL}/api/looker-link`,
         {
           params: {
-            templateId: selectedTemplate
+            templateId: useTemplate ? selectedTemplate.id : 'blank',
+            predefined: useTemplate
           },
           headers: {
             Authorization: `Bearer ${token}`,
@@ -301,49 +294,30 @@ const MagicTemplate = () => {
         }
       );
       
-      if (!response.data?.url) {
-        throw new Error('URL Looker Studio introuvable');
+      if (response.data?.url) {
+        window.open(response.data.url, '_blank', 'noopener,noreferrer');
+        message.success(useTemplate 
+          ? 'Votre template pré-configuré s\'ouvre dans un nouvel onglet'
+          : 'Votre rapport vierge s\'ouvre dans un nouvel onglet'
+        );
+      } else {
+        throw new Error('URL Looker non reçue');
       }
-      
-      setDebugInfo(response.data.url);
-      window.open(response.data.url, '_blank', 'noopener,noreferrer');
-      message.success('Votre rapport Looker Studio s\'ouvre dans un nouvel onglet');
-      setCurrentStep(1);
       
     } catch (error) {
       console.error('Erreur:', error);
       
-      if (error.response?.data?.error) {
-        message.error(`Erreur: ${error.response.data.error}`);
-      } else if (error.response?.data?.message) {
-        message.error(`Erreur: ${error.response.data.message}`);
+      // Gestion des erreurs avec fallback
+      if (useTemplate && selectedTemplate) {
+        const fallbackUrl = selectedTemplate.embedUrl.replace('/embed/', '/');
+        window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
+        message.warning('Redirection directe vers le template (mode fallback)');
       } else {
-        message.error(error.message || 'Erreur de connexion à Looker Studio');
-      }
-      
-      setDebugInfo(error.response?.data || error.message);
-      
-      if (error.response?.status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        navigate('/login');
+        window.open('https://lookerstudio.google.com/datasources/create?connectorId=AKfycbyl-ZwfBzwXRCIipQkH5l0boKCcE2uN5g1-XwAxK5EIbkBtaiHxuDjPOIo28iwtK3ykag', '_blank', 'noopener,noreferrer');
+        message.warning('Redirection directe vers Looker Studio (mode fallback)');
       }
     } finally {
       setLoading(false);
-    }
-  };
-
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
-    message.success('Copié dans le presse-papier');
-  };
-
-  const handleTemplateChange = (value) => {
-    console.log('Template sélectionné:', value);
-    setSelectedTemplate(value);
-    const selected = templates.find(t => t.looker_id === value);
-    if (selected) {
-      checkIfEmptyTemplate(selected.template_data);
     }
   };
 
@@ -359,9 +333,18 @@ const MagicTemplate = () => {
     }
   };
 
+  // Guide handlers
+  const openGuide = () => {
+    setGuideVisible(true);
+  };
+
+  const closeGuide = () => {
+    setGuideVisible(false);
+  };
+
   // Render refresh alert when needed
   const renderRefreshAlert = () => {
-    if (needsTokenRefresh || (templates.length === 0 && !loadingTemplates && !initializing)) {
+    if (needsTokenRefresh) {
       return (
         <Alert
           message="Données non disponibles"
@@ -386,348 +369,247 @@ const MagicTemplate = () => {
     return null;
   };
 
-  const steps = [
-    {
-      title: 'Choisir un template',
-      content: (
-        <div style={{ textAlign: 'center', margin: '40px 0' }}>
-          {renderRefreshAlert()}
-          
-          <Card style={{ marginBottom: 20 }}>
-            <Title level={4}>Sélectionnez un modèle de rapport</Title>
-            <Paragraph>
-              Choisissez parmi nos templates préconçus pour démarrer rapidement avec un rapport adapté à vos besoins.
-            </Paragraph>
+  // Template Preview with Navigation
+  const renderTemplatePreview = () => {
+    if (templatesLoading) {
+      return (
+        <div style={{ textAlign: 'center', padding: '60px' }}>
+          <Spin size="large" tip="Chargement des templates..." />
+        </div>
+      );
+    }
+
+    if (templates.length === 0) {
+      return (
+        <div style={{ textAlign: 'center', padding: '60px' }}>
+          <Empty 
+            description="Aucun template disponible"
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+          />
+        </div>
+      );
+    }
+
+    if (!selectedTemplate) {
+      return (
+        <div style={{ textAlign: 'center', padding: '60px' }}>
+          <Spin size="large" tip="Chargement du template..." />
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        <Card>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div>
+              <Title level={3} style={{ color: BLUE_COLOR, margin: 0 }}>
+                <DashboardOutlined style={{ marginRight: 8 }} />
+                {selectedTemplate.name}
+              </Title>
+              <Text type="secondary">
+                Template {currentTemplateIndex + 1} sur {templates.length}
+              </Text>
+            </div>
             
-            {loadingTemplates || initializing ? (
-              <div style={{ textAlign: 'center', padding: '20px' }}>
-                <Spin tip={initializing ? "Initialisation..." : "Chargement des templates..."} />
-              </div>
-            ) : (
-              <Select
-                style={{ width: '100%', marginTop: 16, marginBottom: 24, maxWidth: 500 }}
-                placeholder="Sélectionnez un template"
-                value={selectedTemplate}
-                onChange={handleTemplateChange}
-                disabled={templates.length === 0}
+            <Space>
+              <Button
+                onClick={() => navigateTemplate('prev')}
+                icon={<LeftOutlined />}
                 size="large"
+                type="primary"
+                disabled={templates.length <= 1}
               >
-                {templates.map(template => (
-                  <Option key={template.looker_id} value={template.looker_id}>
-                    {template.looker_name} - {template.description}
-                  </Option>
-                ))}
-              </Select>
-            )}
-            
-            {templates.length === 0 && !loadingTemplates && !initializing && !needsTokenRefresh && (
-              <Alert
-                message="Aucun template disponible"
-                description="Contactez votre administrateur pour créer des templates de rapport."
-                type="info"
-                showIcon
-                style={{ marginTop: 20 }}
+                Précédent
+              </Button>
+              <Button
+                onClick={() => navigateTemplate('next')}
+                icon={<RightOutlined />}
+                size="large"
+                type="primary"
+                disabled={templates.length <= 1}
+              >
+                Suivant
+              </Button>
+            </Space>
+          </div>
+
+          {/* Description */}
+          <div style={{ marginBottom: 24, textAlign: 'center' }}>
+            <Paragraph style={{ fontSize: 16, marginBottom: 16, maxWidth: 800, margin: '0 auto' }}>
+              {selectedTemplate.description}
+            </Paragraph>
+          </div>
+
+          {/* Template centré sur toute la largeur */}
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ 
+              border: '1px solid #d9d9d9', 
+              borderRadius: 6,
+              overflow: 'hidden',
+              background: '#f5f5f5',
+              width: '100%'
+            }}>
+              <iframe
+                width="100%"
+                height="600"
+                src={selectedTemplate.embedUrl}
+                frameBorder="0"
+                style={{ border: 0 }}
+                allowFullScreen
+                sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
               />
-            )}
-            
-            <div style={{ marginTop: 24, textAlign: 'center' }}>
+            </div>
+          </div>
+
+          <Divider />
+          
+          <div style={{ textAlign: 'center' }}>
+            <Space size="large">
               <Button 
                 type="primary"
                 size="large"
-                onClick={fetchLookerLink}
+                onClick={() => fetchLookerLink(true)} // true = utiliser le template
                 loading={loading}
-                disabled={initializing || templates.length === 0 || !selectedTemplate || !dbName || needsTokenRefresh}
+                disabled={initializing || !selectedTemplate || needsTokenRefresh}
+                style={{ 
+                  minWidth: 200,
+                  backgroundColor: BLUE_COLOR,
+                  borderColor: BLUE_COLOR
+                }}
+                icon={<PlayCircleOutlined />}
               >
-                Générer mon rapport
+                Utiliser ce Template
               </Button>
               
               <Button 
-                style={{ marginLeft: 16 }}
-                onClick={() => setCurrentStep(1)}
-                disabled={needsTokenRefresh}
+                size="large"
+                onClick={() => fetchLookerLink(false)} // false = rapport vierge
+                loading={loading}
+                disabled={initializing || !dbName || needsTokenRefresh}
+                style={{ 
+                  minWidth: 200
+                }}
+                icon={<EditOutlined />}
               >
-                Passer à la configuration
+                Créer un Rapport Vierge
               </Button>
+            </Space>
+            
+            <div style={{ marginTop: 12 }}>
+              <Text type="secondary" style={{ fontSize: 14 }}>
+                <InfoCircleOutlined style={{ marginRight: 4 }} />
+                Choisissez "Utiliser ce Template" pour un rapport pré-configuré avec des données dexemple,
+                ou "Créer un Rapport Vierge" pour partir de zéro.
+              </Text>
             </div>
-          </Card>
-        </div>
-      ),
-    },
-    {
-      title: 'Personnaliser votre rapport',
-      content: (
-        <Card style={{ marginTop: 20 }}>
-          {isEmptyTemplate ? (
-            <>
-              <Title level={4}>Création dun nouveau rapport</Title>
-              <Paragraph>
-                Vous avez choisi de créer un rapport vide. Voici comment procéder :
-              </Paragraph>
-              
-              <ol>
-                <li>Dans Looker Studio, cliquez sur <Text strong>"Créer"</Text> puis <Text strong>"Rapport"</Text></li>
-                <li>Sélectionnez <Text strong>"Nouvelle source de données"</Text></li>
-                <li>Choisissez le connecteur MySQL</li>
-                <li>Remplissez les informations de connexion ci-dessous</li>
-                <li>Sélectionnez les tables et champs à utiliser</li>
-                <li>Créez vos visualisations (tableaux, graphiques, etc.)</li>
-              </ol>
-              
-              <Divider orientation="left">Configuration requise</Divider>
-            </>
-          ) : (
-            <>
-              <Title level={4}>Votre rapport est prêt !</Title>
-              <Paragraph>
-                Votre rapport Looker Studio sest ouvert dans un nouvel onglet avec :
-              </Paragraph>
-              
-              <ul style={{ marginBottom: 20 }}>
-                <li>Template préconfiguré selon votre choix</li>
-                <li>Tables et champs déjà sélectionnés</li>
-              </ul>
-              
-              <Title level={4}>Modifications possibles :</Title>
-              <ol>
-                <li>Ajoutez ou modifiez les visualisations selon vos besoins</li>
-                <li>Personnalisez les filtres et les plages de dates</li>
-                <li>Ajustez la mise en page et les couleurs</li>
-                <li>Cliquez sur <Text strong>"Enregistrer"</Text> dans le menu supérieur pour sauvegarder vos modifications</li>
-              </ol>
-            </>
-          )}
-          
-          <Collapse style={{ marginTop: 20 }}>
-            <Panel header="Configuration de connexion MySQL (Copier ces informations)" key="db-config">
-              <Alert
-                message="Informations sensibles"
-                description="Ces identifiants sont personnels et confidentiels"
-                type="warning"
-                showIcon
-                style={{ marginBottom: 20 }}
-              />
-
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 16 }}>
-                <tbody>
-                  <tr>
-                    <td style={{ padding: '8px', border: '1px solid #d9d9d9', width: '150px' }}>
-                      <Text strong>Hôte MySQL:</Text>
-                    </td>
-                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
-                      ****
-                      <Button 
-                        type="text" 
-                        icon={<CopyOutlined />} 
-                        onClick={() => copyToClipboard('51.38.187.245')}
-                        style={{ marginLeft: 8 }}
-                      />
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '8px', border: '1px solid #d9d9d9', width: '150px' }}>
-                      <Text strong>Nom de la base :</Text>
-                    </td>
-                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
-                      {dbName || '****'}
-                      <Button 
-                        type="text" 
-                        icon={<CopyOutlined />} 
-                        onClick={() => copyToClipboard(dbName)}
-                        style={{ marginLeft: 8 }}
-                        disabled={!dbName}
-                      />
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
-                      <Text strong>Port:</Text>
-                    </td>
-                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
-                      ****
-                      <Button 
-                        type="text" 
-                        icon={<CopyOutlined />} 
-                        onClick={() => copyToClipboard('3306')}
-                        style={{ marginLeft: 8 }}
-                      />
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
-                      <Text strong>Utilisateur:</Text>
-                    </td>
-                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
-                      ****
-                      <Button 
-                        type="text" 
-                        icon={<CopyOutlined />} 
-                        onClick={() => copyToClipboard('looker_user')}
-                        style={{ marginLeft: 8 }}
-                      />
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
-                      <Text strong>Mot de passe:</Text>
-                    </td>
-                    <td style={{ padding: '8px', border: '1px solid #d9d9d9' }}>
-                      ****
-                      <Button 
-                        type="text" 
-                        icon={<CopyOutlined />} 
-                        onClick={() => copyToClipboard('lokaszsh98@Datahive_looker')}
-                        style={{ marginLeft: 8 }}
-                      />
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              
-              <Alert
-                message="Instructions"
-                description={
-                  <>
-                    <p>1. Dans Looker Studio, sélectionnez "Créer une source de données"</p>
-                    <p>2. Choisissez le connecteur MySQL</p>
-                    <p>3. Remplissez les champs avec les informations ci-dessus</p>
-                    <p>4. Cliquez sur "Authentifier"</p>
-                  </>
-                }
-                type="info"
-                showIcon
-              />
-            </Panel>
-          </Collapse>
-
-          <Alert
-            message="Astuce"
-            description="Pour partager votre rapport, cliquez sur 'Partager' dans le menu supérieur de Looker Studio."
-            type="info"
-            showIcon
-            style={{ marginTop: 20 }}
-          />
-
-          <div style={{ marginTop: 24, textAlign: 'center' }}>
-            <Button 
-              style={{ marginRight: 8 }} 
-              onClick={() => setCurrentStep(0)}
-            >
-              Retour
-            </Button>
-            <Button 
-              type="primary"
-              onClick={() => setCurrentStep(2)}
-            >
-              Continuer vers la gestion
-            </Button>
           </div>
         </Card>
-      ),
-    },
-    {
-      title: 'Gérer vos rapports',
-      content: (
-        <Card style={{ marginTop: 20 }}>
-          <Title level={4}>Accéder à vos rapports existants</Title>
-          <Paragraph>
-            Vous pouvez accéder à tous vos rapports précédemment créés :
-          </Paragraph>
-          
-          <ol>
-            <li>Visitez <a href="https://lookerstudio.google.com/u/0/navigation/reporting" target="_blank" rel="noopener noreferrer">Looker Studio</a></li>
-            <li>Connectez-vous avec votre compte Google si nécessaire</li>
-            <li>Vos rapports apparaîtront dans la liste des rapports récents</li>
-          </ol>
-          
-          <Alert
-            message="Besoin d'aide ?"
-            description="Si vous rencontrez des difficultés avec vos rapports, contactez notre équipe de support technique."
-            type="info"
-            showIcon
-            style={{ marginTop: 20 }}
-          />
 
-          <div style={{ marginTop: 20, textAlign: 'center' }}>
-            <Button 
-              style={{ marginRight: 8 }}
-              onClick={() => setCurrentStep(1)}
-            >
-              Retour à la personnalisation
-            </Button>
-            <Button 
-              type="primary"
-              onClick={() => {
-                setCurrentStep(0);
-                setDebugInfo(null);
-              }}
-            >
-              Créer un nouveau rapport
-            </Button>
+        {/* Template Navigation Indicators */}
+        {templates.length > 1 && (
+          <div style={{ textAlign: 'center', marginTop: 16 }}>
+            <Space>
+              {templates.map((template, index) => (
+                <Button
+                  key={template.id}
+                  size="small"
+                  type={index === currentTemplateIndex ? 'primary' : 'default'}
+                  style={{
+                    backgroundColor: index === currentTemplateIndex ? BLUE_COLOR : undefined,
+                    borderColor: index === currentTemplateIndex ? BLUE_COLOR : undefined,
+                    width: 8,
+                    height: 8,
+                    padding: 0,
+                    borderRadius: '50%'
+                  }}
+                  onClick={() => selectTemplate(template, index)}
+                />
+              ))}
+            </Space>
           </div>
-        </Card>
-      ),
-    },
-  ];
-
-  return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Navbar onCollapse={(collapsed) => setCollapsed(collapsed)} />
-      <Layout 
-        className="site-layout" 
-        style={{ 
-          marginLeft: collapsed ? 80 : 250,
-          transition: 'margin-left 0.2s'
-        }}
-      >
-        <Content style={{ margin: '24px 16px 0', overflow: 'initial' }}>
-          <div style={{ padding: 24, background: '#fff', minHeight: 'calc(100vh - 112px)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        )}
+      </div>
+    );
+  };
+return (
+  <Layout style={{ minHeight: '100vh' }}>
+    <Navbar onCollapse={(collapsed) => setCollapsed(collapsed)} />
+    <Layout 
+      className="site-layout" 
+      style={{ 
+        marginLeft: collapsed ? 80 : 250,
+        transition: 'margin-left 0.2s'
+      }}
+    >
+      <Content style={{ margin: '24px 16px 0', overflow: 'initial' }}>
+        <div style={{ 
+          padding: 24, 
+          background: '#fff', 
+          minHeight: 'calc(100vh - 112px)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center'
+        }}>
+          <div style={{ 
+            width: '100%', 
+            maxWidth: '1400px',
+            marginBottom: 24 
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <Title level={2}>Rapports Looker Studio</Title>
                 <Paragraph>
-                  Créez et personnalisez facilement des rapports Looker Studio avec vos données.
+                  Naviguez entre nos templates préconçus et créez votre rapport en quelques clics.
                 </Paragraph>
               </div>
               
-              {/* Manual refresh button in header */}
-              <Button
-                icon={<ReloadOutlined />}
-                onClick={handleManualRefresh}
-                loading={refreshing}
-                type="default"
-              >
-                Actualiser
-              </Button>
+              <Space>
+                <Tooltip title="Ouvrir le guide d'utilisation">
+                  <Button
+                    icon={<QuestionCircleOutlined />}
+                    onClick={openGuide}
+                    type="default"
+                    style={{ 
+                      borderColor: BLUE_COLOR,
+                      color: BLUE_COLOR
+                    }}
+                  >
+                    Guide dutilisation
+                  </Button>
+                </Tooltip>
+                
+                <Button
+                  icon={<ReloadOutlined />}
+                  onClick={handleManualRefresh}
+                  loading={refreshing}
+                  type="default"
+                >
+                  Actualiser
+                </Button>
+              </Space>
             </div>
             
-            <Steps current={currentStep} style={{ margin: '40px 0' }}>
-              {steps.map((item) => (
-                <Step key={item.title} title={item.title} />
-              ))}
-            </Steps>
-            
-            <div className="steps-content">{steps[currentStep].content}</div>
-            
-            {debugInfo && (
-              <Collapse style={{ marginTop: 40 }}>
-                <Panel header="Informations techniques (pour support)" key="1">
-                  <div>
-                    <h4>URL générée :</h4>
-                    <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                      {typeof debugInfo === 'string' ? debugInfo : JSON.stringify(debugInfo, null, 2)}
-                    </pre>
-                  </div>
-                  <Paragraph>
-                    En cas de problème, fournissez ces informations à léquipe technique.
-                  </Paragraph>
-                </Panel>
-              </Collapse>
-            )}
+            {renderRefreshAlert()}
           </div>
-        </Content>
-      </Layout>
+          
+          {initializing ? (
+            <div style={{ textAlign: 'center', padding: '60px', flex: 1 }}>
+              <Spin size="large" tip="Initialisation..." />
+            </div>
+          ) : (
+            <div style={{ width: '100%', flex: 1 }}>
+              {renderTemplatePreview()}
+            </div>
+          )}
+        </div>
+      </Content>
     </Layout>
-  );
+
+    {/* AJOUTER CETTE LIGNE - Composant Guide */}
+    <Guide visible={guideVisible} onClose={closeGuide} />
+  </Layout>
+);
 };
 
 export default MagicTemplate;

@@ -94,7 +94,7 @@ const NavbarAdmin = ({ title = "Data Hive", onCollapse, onPageChange }) => {
         className={location.pathname === '/dashboard-admin' ? 'menu-item-selected' : ''}
         style={getItemStyle('/dashboard-admin')}
       >
-        <Link to="/dashboard-admin" className="nav-link">Dashboard</Link>
+        <Link to="/dashboard-admin" className="nav-link">Tableau de bord</Link>
       </Menu.Item>
       
       <Menu.Item 
@@ -104,7 +104,7 @@ const NavbarAdmin = ({ title = "Data Hive", onCollapse, onPageChange }) => {
         className={location.pathname === '/subscription-admin' ? 'menu-item-selected' : ''}
         style={getItemStyle('/subscription-admin')}
       >
-        <Link to="/subscription-admin" className="nav-link">Subscription</Link>
+        <Link to="/subscription-admin" className="nav-link">Abonnement</Link>
       </Menu.Item>
       
       <Menu.Item 
@@ -114,7 +114,7 @@ const NavbarAdmin = ({ title = "Data Hive", onCollapse, onPageChange }) => {
         className={location.pathname === '/users' ? 'menu-item-selected' : ''}
         style={getItemStyle('/users')}
       >
-        <Link to="/users" className="nav-link">Employee</Link>
+        <Link to="/users" className="nav-link">Employés</Link>
       </Menu.Item>
       
       <Menu.Item 
@@ -124,7 +124,7 @@ const NavbarAdmin = ({ title = "Data Hive", onCollapse, onPageChange }) => {
         className={location.pathname === '/settings' ? 'menu-item-selected' : ''}
         style={getItemStyle('/settings')}
       >
-        <Link to="/settings" className="nav-link">Settings</Link>
+        <Link to="/settings" className="nav-link">Paramètres</Link>
       </Menu.Item>
     </Menu>
   );
@@ -193,7 +193,7 @@ const NavbarAdmin = ({ title = "Data Hive", onCollapse, onPageChange }) => {
             onClick={handleSignOut}
             style={{ marginTop: '16px' }}
           >
-            Sign Out
+            Déconnexion
           </Button>
         </Drawer>
       </>
@@ -253,7 +253,7 @@ const NavbarAdmin = ({ title = "Data Hive", onCollapse, onPageChange }) => {
               padding: '0 16px'
             }}
           > 
-            {!collapsed && 'Sign Out'}
+            {!collapsed && 'Déconnexion'}
           </Button>
         </Popconfirm>
       </div>

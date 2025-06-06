@@ -27,7 +27,7 @@ const Login = () => {
       });
       return response.data.subscription;
     } catch (error) {
-      console.error("Error fetching subscription info:", error);
+      console.error("Erreur lors de la récupération des informations d'abonnement:", error);
       return null;
     }
   };
@@ -38,7 +38,7 @@ const Login = () => {
     
     const userData = {
       id: user.id,
-      tenant_id: user.tenant_id, // Ensure tenant_id is included here
+      tenant_id: user.tenant_id,
       role_id: user.role_id,
       email: user.email,
       permissions: user.permissions,
@@ -46,8 +46,7 @@ const Login = () => {
       has_active_subscription: subscriptionInfo?.status === 'active'
     };
 
-    // Log the userData to verify tenant_id is properly included
-    console.log('User data being stored:', userData);
+    console.log('Données utilisateur stockées:', userData);
 
     localStorage.setItem("user", JSON.stringify(userData));
     localStorage.setItem("token", token);
@@ -62,8 +61,7 @@ const Login = () => {
         password: values.password,
       });
       
-      // Log the response to verify tenant_id is coming from backend
-      console.log('Login response:', response.data);
+      console.log('Réponse de connexion:', response.data);
       
       if (response.data.token) {
         await processUserData(response.data);
@@ -84,15 +82,14 @@ const Login = () => {
         email: result.user.email,
       });
       
-      // Log the response to verify tenant_id is coming from Google login
-      console.log('Google login response:', response.data);
+      console.log('Réponse de connexion Google:', response.data);
   
       if (response.data.token) {
         await processUserData(response.data);
         message.success("Connexion Google réussie !");
       }
     } catch (error) {
-      message.error(error.response?.data?.message || "Échec Google");
+      message.error(error.response?.data?.message || "Échec de la connexion Google");
     } finally {
       setGoogleLoading(false);
     }
@@ -125,8 +122,8 @@ const Login = () => {
       <div className="login-content">
         <Card className="login-card">
           <div className="login-header">
-            <Title level={2} className="login-title">Welcome Back</Title>
-            <Text className="login-subtitle">Sign in to continue to your account</Text>
+            <Title level={2} className="login-title">Bienvenue sur Data Hive</Title>
+            <Text className="login-subtitle">Connectez-vous pour accéder à votre compte</Text>
           </div>
           
           <Form
@@ -137,29 +134,29 @@ const Login = () => {
           >
             <Form.Item
               name="email"
-              label="Email Address"
+              label="Adresse e-mail"
               rules={[
-                { required: true, message: "Please enter your email!" },
-                { type: "email", message: "Invalid email address!" }
+                { required: true, message: "Veuillez saisir votre email" },
+                { type: "email", message: "Format d'email invalide" }
               ]}
             >
               <Input
                 prefix={<MailOutlined className="input-icon" />}
-                placeholder="Enter your email"
+                placeholder="Entrez votre email"
                 size="large"
               />
             </Form.Item>
 
             <Form.Item
               name="password"
-              label="Password"
+              label="Mot de passe"
               rules={[
-                { required: true, message: "Please enter your password!" }
+                { required: true, message: "Veuillez saisir votre mot de passe" }
               ]}
             >
               <Input.Password
                 prefix={<LockOutlined className="input-icon" />}
-                placeholder="Enter your password"
+                placeholder="Entrez votre mot de passe"
                 size="large"
               />
             </Form.Item>
@@ -170,7 +167,7 @@ const Login = () => {
                 onClick={() => setResetModalVisible(true)}
                 className="forgot-password-btn"
               >
-                Forgot password?
+                Mot de passe oublié ?
               </Button>
             </div>
 
@@ -183,30 +180,30 @@ const Login = () => {
                 size="large"
                 className="submit-btn"
               >
-                Sign In
+                Se connecter
               </Button>
             </Form.Item>
           </Form>
 
-          <Divider className="divider">or continue with</Divider>
+          <Divider className="divider">ou continuer avec</Divider>
 
           <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <Button
-            icon={<GoogleOutlined />}
-            onClick={handleGoogleLogin}
-            loading={googleLoading}
-            size="large"
-            className="google-btn"
-          >
-            Sign in with Google
-          </Button>
-        </div>
+            <Button
+              icon={<GoogleOutlined />}
+              onClick={handleGoogleLogin}
+              loading={googleLoading}
+              size="large"
+              className="google-btn"
+            >
+              Se connecter avec Google
+            </Button>
+          </div>
 
           <div className="login-footer">
             <Text className="footer-text">
-              Dont have an account?{" "}
+              Vous n'avez pas de compte ?{' '}
               <Link to="/register" className="register-link">
-                Sign up
+                Créer un compte
               </Link>
             </Text>
           </div>
@@ -214,12 +211,12 @@ const Login = () => {
       </div>
 
       <Modal
-        title="Reset Password"
+        title="Réinitialisation du mot de passe"
         open={resetModalVisible}
         onCancel={() => setResetModalVisible(false)}
         footer={[
           <Button key="back" onClick={() => setResetModalVisible(false)}>
-            Cancel
+            Annuler
           </Button>,
           <Button 
             key="submit" 
@@ -227,14 +224,14 @@ const Login = () => {
             loading={resetLoading}
             onClick={handleResetPasswordRequest}
           >
-            Send Reset Link
+            Envoyer le lien
           </Button>,
         ]}
       >
-        <p>Enter your email address to receive a password reset link</p>
+        <p>Saisissez votre adresse e-mail pour recevoir un lien de réinitialisation</p>
         <Input
           prefix={<MailOutlined />}
-          placeholder="Your email address"
+          placeholder="Votre adresse e-mail"
           value={resetEmail}
           onChange={(e) => setResetEmail(e.target.value)}
           size="large"
