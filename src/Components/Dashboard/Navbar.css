@@ -16,8 +16,8 @@
   
   .logo {
     color: #fff;
-    font-size: 18px;
-    font-weight: 600;
+    font-size: 25px;
+    font-weight: 700;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -154,3 +154,29 @@
   .menu-item-selected a {
     color: #1890ff !important;
   }
+  /* Appliquer taille et gras au menu latéral (desktop) */
+.navbar-menu .ant-menu-item,
+.navbar-menu .ant-menu-submenu-title {
+  font-size: 16px;        /* Ajuste la taille comme tu veux : 16px, 18px... */
+  font-weight: 700;       /* 500 pour semi-gras, 700 pour bien gras */
+}
+
+/* Appliquer taille et gras aux liens du menu */
+.nav-link {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+/* Adapter aussi le texte du menu dans le drawer (mobile) */
+.navbar-drawer .ant-menu-item,
+.navbar-drawer .ant-menu-submenu-title {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+/* Rendre le logo plus visible si tu veux aussi */
+.logo {
+  font-size: 28px;
+  font-weight: 700;
+}
+

@@ -114,7 +114,7 @@ const SubscriptionPlans = () => {
                 {plans.map((plan) => (
                   <Col key={plan.id} xs={24} sm={12} md={8} lg={6}>
                     <Card
-                      title={<Title level={4}>{plan.name}</Title>}
+                      title={<Title level={4}>{plan.plan_name}</Title>}
                       className="subscription-card"
                     >
                       <Title level={3}>{plan.price}€/mois</Title>

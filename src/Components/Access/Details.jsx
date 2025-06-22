@@ -16,26 +16,16 @@ const Details = () => {
         
         <div className="details-description">
           <h3 className="slogan-text">
-            Notre devise : Qualité, Innovation, Excellence
+            Des courbes dynamiques pour suivre vos performances.
           </h3>
-          <div className="core-values">
-            <span className="core-value-item">✓ Expertise</span>
-            <p>gd     rtetrtrt            drteryery eterer ererg    erzfsf       </p>
-            <span className="core-value-item">✓ Créativité</span>
-            <span className="core-value-item">✓ Engagement</span>
-          </div>
         </div>
       </div>
       <div className="details-wrapper">
       <div className="details-description">
           <h3 className="slogan-text">
-            Notre devise : Qualité, Innovation, Excellence
+            Visualisez vos données en un coup d’œil.
           </h3>
-          <div className="core-values">
-            <span className="core-value-item">✓ Expertise</span>
-            <span className="core-value-item">✓ Créativité</span>
-            <span className="core-value-item">✓ Engagement</span>
-          </div>
+         
         </div>
         <div className="team-photo-wrapper">
           <img 
@@ -56,13 +46,9 @@ const Details = () => {
         
         <div className="details-description">
           <h3 className="slogan-text">
-            Notre devise : Qualité, Innovation, Excellence
+            Analysez vos résultats avec des graphiques clairs et précis.
           </h3>
-          <div className="core-values">
-            <span className="core-value-item">✓ Expertise</span>
-            <span className="core-value-item">✓ Créativité</span>
-            <span className="core-value-item">✓ Engagement</span>
-          </div>
+      
         </div>
       </div>
       

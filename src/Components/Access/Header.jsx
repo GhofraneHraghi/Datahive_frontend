@@ -4,7 +4,7 @@ import { FiMenu } from 'react-icons/fi';
 const Header = () => {
   return (
     <header className="header">
-      <div className="logo">EasyApp</div>
+      <div className="logo">Data Hive</div>
       <nav className="nav">
         <a href="#features">Fonctionnalités</a>
         <a href="#contact">Contact</a>

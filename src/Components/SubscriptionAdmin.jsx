@@ -62,7 +62,7 @@ const SubscriptionAdmin = () => {
       setLoading(true);
       if (editPlan) {
         const response = await axios.put(`${apiPlanUrl}/${editPlan.plan_id}`, values);
-        setPlans(plans.map((p) => (p.id === editPlan.id ? response.data : p)));
+        setPlans(plans.map((p) => (p.plan_id === editPlan.id ? response.data : p)));
         message.success("Plan mis à jour avec succès !");
       } else {
         const response = await axios.post(apiPlanUrl, values);
@@ -84,7 +84,7 @@ const SubscriptionAdmin = () => {
     try {
       setLoading(true);
       await axios.delete(`${apiPlanUrl}/${id}`);
-      setPlans(plans.filter((plan) => plan.id !== id));
+      setPlans(plans.filter((plan) => plan.plan_id !== id));
       message.success("Plan supprimé avec succès !");
     } catch (error) {
       console.error("Erreur lors de la suppression :", error);
@@ -102,7 +102,12 @@ const SubscriptionAdmin = () => {
 
   const showEditPlanModal = (plan) => {
     setEditPlan(plan);
-    form.setFieldsValue(plan);
+    form.setFieldsValue({
+    name: plan.plan_name, // plan_name devient name
+    price: plan.price,
+    quota_limit: plan.quota_limit,
+    duration_days: plan.duration_days
+  });
     setOpenDialog(true);
   };
 
@@ -147,9 +152,9 @@ const SubscriptionAdmin = () => {
               </Col>
 
               {plans.map((plan) => (
-                <Col key={plan.id} xs={24} sm={12} md={8}>
+                <Col key={plan.plan_id} xs={24} sm={12} md={8}>
                   <Card
-                    title={plan.name}
+                    title={plan.plan_name}
                     extra={
                       <Space>
                         <Button 
@@ -162,7 +167,7 @@ const SubscriptionAdmin = () => {
                           icon={<DeleteOutlined />} 
                           type="text" 
                           danger 
-                          onClick={() => handleDeletePlan(plan.id)}
+                          onClick={() => handleDeletePlan(plan.plan_id)}
                           disabled={loading}
                         />
                       </Space>
@@ -216,7 +221,7 @@ const SubscriptionAdmin = () => {
 
           <Form.Item
             name="quota_limit"
-            label="Quota (nombre max d'utilisateurs, etc.)"
+            label="Quota (nombre max d'utilisateurs)"
             rules={[{ required: true, message: 'Veuillez saisir un quota' }]}
           >
             <InputNumber min={0} style={{ width: '100%' }} />

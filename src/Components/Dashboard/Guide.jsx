@@ -15,7 +15,7 @@ const Guide = ({ onClose }) => {
         variant="outlined"
         title={
           <Space>
-            <Title level={4} style={{ margin: 0 }}>Guide de Configuration</Title>
+            <Title level={4} style={{ margin: 0 }}>Guide_Configuration</Title>
             <Button 
               type="text" 
               icon={<CloseOutlined />} 
